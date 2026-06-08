@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ghost Panel | Hyper-Charged Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    :root {
+      --bg-pure: #000000;
+      --panel-dark: #000000;
+      
+      /* Super-saturated ultra-bright neon palette */
+      --neon-ghost: #00ff9d;
+      --neon-blue: #0088ff;
+      --neon-cyan: #00f3ff;
+      --neon-purple: #d400ff;
+      --neon-error: #ff003c;
+      
+      /* Maximum intensity glowing systems to punch out contrast */
+      --glow-blue-intense: 0 0 25px #0088ff, 0 0 50px #0088ff, inset 0 0 20px rgba(0, 136, 255, 0.8);
+      --glow-cyan-intense: 0 0 25px #00f3ff, 0 0 50px #00f3ff, inset 0 0 20px rgba(0, 243, 255, 0.8);
+      --glow-ghost-intense: 0 0 30px #00ff9d, 0 0 60px #00ff9d, inset 0 0 25px rgba(0, 255, 157, 0.6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-pure);
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    /* FULL MOBILE CONFIGURATION BOUNDS - Adapts freely horizontally but grows with content */
+    .mobile-container {
+      width: 100%;
+      max-width: 430px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* INITIALIZATION SPLASH LOADER SCREEN */
+    #splashScreen {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-pure);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      transition: opacity 0.5s ease-out, visibility 0.5s;
+      cursor: pointer;
+    }
+
+    .ghost-circle {
+      width: 130px;
+      height: 130px;
+      border: 5px solid var(--neon-ghost);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: var(--glow-ghost-intense);
+      margin-bottom: 30px;
+      position: relative;
+      animation: pulse-burn 1.5s infinite ease-in-out;
+    }
+
+    .ghost-circle::before {
+      content: '';
+      position: absolute;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      border: 3px solid var(--neon-cyan);
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: radar-wave 2s infinite linear;
+    }
+
+    @keyframes radar-wave {
+      0% { transform: scale(0.9); opacity: 0.9; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+
+    .ghost-icon {
+      width: 65px;
+      height: 65px;
+      fill: var(--neon-ghost);
+      filter: drop-shadow(0 0 15px var(--neon-ghost));
+    }
+
+    .init-text {
+      color: var(--neon-ghost);
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px var(--neon-ghost);
+      animation: flash-text 1.2s infinite;
+    }
+
+    .click-prompt {
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 12px;
+      margin-top: 15px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+
+    @keyframes pulse-burn {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.06); filter: brightness(1.5); box-shadow: 0 0 45px var(--neon-ghost), 0 0 90px var(--neon-ghost); }
+    }
+
+    @keyframes flash-text {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* MAIN SYSTEM INTERFACE WINDOW */
+    .hologram-window {
+      width: 100%;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: all 0.6s cubic-bezier(0.1, 0.9, 0.2, 1);
+      display: none;
+    }
+
+    .hologram-window.active {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* HIGH-CONTRAST PANEL WITH SMOOTH CURVES */
+    .panel-core {
+      background: var(--panel-dark);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 4px solid var(--neon-blue);
+      border-radius: 24px; /* Applied clean high-contrast rounded profile borders */
+      box-shadow: var(--glow-blue-intense);
+      overflow: hidden;
+    }
+
+    /* Real-time scanning visual distortion overlay across screen */
+    .panel-glitch-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.08), rgba(0, 255, 0, 0.03), rgba(0, 0, 255, 0.08));
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.4;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-blue);
+    }
+
+    h2 {
+      font-size: 14px;
+      color: #ffffff;
+      text-shadow: 0 0 10px var(--neon-purple);
+      margin-top: 4px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: #000000;
+      padding: 6px 16px;
+      margin-top: 8px;
+      border: 2px solid var(--neon-cyan);
+      border-radius: 30px;
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.7);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--neon-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    /* INPUT ELEMENT CONFIGURATION */
+    .input-wrapper { 
+      position: relative;
+      margin-bottom: 12px; 
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      background: #000000;
+      border: 3px solid var(--neon-blue);
+      border-radius: 12px;
+      color: #ffffff;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: 900;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan-intense);
+    }
+
+    /* ACTION BUTTON MATRIX DESIGN */
+    .button-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      padding: 16px;
+      background: #000000;
+      border: 3px solid var(--neon-blue);
+      border-radius: 12px;
+      color: var(--neon-cyan);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.15s ease;
+    }
+
+    button:hover, button:active {
+      background: var(--neon-blue);
+      color: #000000;
+      box-shadow: var(--glow-blue-intense);
+    }
+
+    button.btn-search {
+      border-color: var(--neon-cyan);
+      color: #ffffff;
+      background: rgba(0, 243, 255, 0.2);
+    }
+
+    button.btn-search:hover, button.btn-search:active {
+      background: var(--neon-cyan);
+      color: #000000;
+      box-shadow: var(--glow-cyan-intense);
+    }
+
+    /* DYNAMIC HUD SYSTEM STATISTICS MATRIX BAR */
+    .hud-metrics-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: rgba(0, 0, 0, 1);
+      border: 2px solid rgba(0, 102, 255, 0.8);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .metric-item {
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .metric-item span {
+      color: var(--neon-ghost);
+      font-weight: 900;
+      text-shadow: 0 0 5px var(--neon-ghost);
+    }
+
+    /* TERMINAL LOG OUTPUT COMPONENT - NO SCROLLBAR, AUTOGROW FULL SIZE */
+    .terminal-screen {
+      background: #000000;
+      border: 2px solid rgba(0, 243, 255, 0.8);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      height: auto;       /* Dynamically expand heights natively */
+      overflow: visible;  /* Completely disable restricted nested scrollbars */
+    }
+
+    .terminal-text {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--neon-cyan);
+      font-weight: bold;
+      line-height: 1.5;
+      text-shadow: 0 0 6px rgba(0, 243, 255, 0.9);
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .data-node-block {
+      background: #000000;
+      border: 2px solid var(--neon-blue);
+      border-left: 6px solid var(--neon-cyan);
+      border-radius: 8px;
+      padding: 12px;
+      animation: data-reveal 0.3s ease-out forwards;
+    }
+
+    @keyframes data-reveal {
+      from { transform: translateY(5px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .node-label { 
+      font-size: 10px; 
+      color: #ffffff; 
+      text-transform: uppercase; 
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+    
+    .node-data-value { 
+      font-size: 15px; 
+      font-weight: 900; 
+      color: var(--neon-ghost); 
+      text-shadow: 0 0 5px var(--neon-ghost);
+    }
+    
+    .terminal-error-msg { 
+      color: var(--neon-error) !important; 
+      text-shadow: 0 0 10px var(--neon-error) !important; 
+      font-weight: 900;
+    }
+
+    /* LEGAL LABELS & NOTICES */
+    .notice-card {
+      background: #000000;
+      border: 2px dashed var(--neon-error);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .notice-header { 
+      color: var(--neon-error); 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      font-size: 13px; 
+      margin-bottom: 2px;
+      text-shadow: 0 0 8px var(--neon-error);
+    }
+    
+    .notice-body { 
+      color: #ffffff; 
+      font-size: 11px; 
+      font-weight: bold;
+      line-height: 1.4; 
+    }
+
+    .educational-disclaimer-box {
+      font-size: 11px;
+      color: #ffffff;
+      font-weight: 500;
+      text-align: center;
+      border-top: 2px solid rgba(0, 102, 255, 0.8);
+      padding-top: 10px;
+      line-height: 1.4;
+    }
+
+    footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-container">
+
+  <div id="splashScreen" onclick="triggerSystemInitialization()">
+    <div class="ghost-circle">
+      <svg class="ghost-icon" viewBox="0 0 24 24">
+        <path d="M12,2A10,10 0 0,0 2,12V22L4.5,19.5L7,22L9.5,19.5L12,22L14.5,19.5L17,22L19.5,19.5L22,22V12A10,10 0 0,0 12,2M9,8A1.5,1.5 0 1,1 7.5,9.5A1.5,1.5 0 0,1 9,8M17,8A1.5,1.5 0 1,1 15.5,9.5A1.5,1.5 0 0,1 17,8Z"/>
+      </svg>
+    </div>
+    <div class="init-text" id="loaderText">Initialize Node</div>
+    <div class="click-prompt" id="loaderSub">Tap Window Frame</div>
+  </div>
+
+  <div class="hologram-window" id="mainApp">
+    <div class="panel-core">
+      <div class="panel-glitch-overlay"></div>
+      
+      <header>
+        <h1> 𝐖𝐄𝐋𝐂𝐎𝐌良 𝐓𝐎 ᑎᑌᗰᗷEᖇ TO IᑎᖴO 𝐄𝐍𝐆𝐈𝐍𝐄</h1>
+        <h2> 𝐃𝐞𝐯𝐥𝐨𝐩𝐞𝐫 𝐢𝐬 𝐒𝐀𝐌𝐀𝐑𝐓𝐇 </h2>
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          <span id="nodeStatus">Link Isolated</span>
+        </div>
+      </header>
+
+      <div class="hud-metrics-bar">
+        <div class="metric-item">LATENCY: <span id="hudLatency">0ms</span></div>
+        <div class="metric-item">NODE CORE: <span id="hudCore">READY</span></div>
+      </div>
+
+      <div class="input-wrapper">
+        <input type="text" id="mobile" placeholder="📞𝐄𝐧𝐭𝐞𝐫 𝐩𝐡𝐨𝐧𝐞 𝐧𝐮𝐦𝐛𝐞𝐫" autocomplete="off">
+      </div>
+
+      <div class="button-row">
+        <button class="btn-search" onclick="executeDatabaseScan()">Execute Query</button>
+        <button onclick="clearWorkspace()">Reset</button>
+      </div>
+
+      <div class="terminal-screen">
+        <div class="terminal-text" id="logFeed">[*] Core interface deployed. Listening for validated string configurations.</div>
+        <div class="data-grid" id="nodesContainer"></div>
+      </div>
+
+      <div class="notice-card">
+        <div class="notice-header">Note</div>
+        <div class="notice-body">𝐓𝐡𝐨𝐬𝐞 𝐈𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐭𝐢𝐨𝐧 𝐚𝐫𝐞 𝐧𝐨𝐭 𝐜𝐨𝐦𝐢𝐧𝐠 [𝐓𝐡𝐞𝐫𝐞 𝐝𝐚𝐭𝐚 𝐢𝐬 𝐧𝐨𝐭 𝐥𝐞𝐚𝐤𝐞𝐝 𝐢𝐧 𝐚𝐧𝐲 𝐝𝐚𝐭𝐚𝐛𝐚𝐬𝐞] [𝐲𝐨𝐮𝐫 𝐧𝐮𝐦𝐛𝐞𝐫 𝐢𝐬 𝐬𝐚𝐟𝐞]</div>
+      </div>
+
+      <div class="educational-disclaimer-box">
+        <strong>Disclaimer:</strong> This application environment is engineered strictly for educational purpose processing. External framework exploitation is prohibited.
+      </div>
+
+      <footer>
+        <span>Max-Glow Core v3.0</span>
+        <span>@𝐒𝐚𝐦𝐚𝐫𝐭𝐡</span>
+      </footer>
+      
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Programmatic Synthetic Audio Generation (Web Audio API)
+  const AudioEngine = {
+    ctx: null,
+    setup() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    
+    playBootUp() {
+      this.setup(); let now = this.ctx.currentTime;
+      this.triggerTone(140, 0.08, 'sawtooth', now);
+      this.triggerTone(280, 0.08, 'sawtooth', now + 0.05);
+      this.triggerTone(560, 0.12, 'sawtooth', now + 0.10);
+      this.triggerTone(1120, 0.25, 'sine', now + 0.15);
+    },
+    playClick() { this.setup(); this.triggerTone(1050, 0.03, 'sine', this.ctx.currentTime); },
+    playSuccess() {
+      this.setup(); let now = this.ctx.currentTime;
+      this.triggerTone(587.33, 0.05, 'sine', now);
+      this.triggerTone(880.00, 0.05, 'sine', now + 0.05);
+      this.triggerTone(1174.66, 0.15, 'sine', now + 0.10);
+    },
+    playError() {
+      this.setup(); let now = this.ctx.currentTime;
+      this.triggerTone(160, 0.12, 'sawtooth', now);
+      this.triggerTone(90, 0.20, 'sawtooth', now + 0.05);
+    },
+    triggerTone(frequency, duration, type, startTime) {
+      let osc = this.ctx.createOscillator(); let gainNode = this.ctx.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(frequency, startTime);
+      gainNode.gain.setValueAtTime(0.12, startTime); gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc.connect(gainNode); gainNode.connect(this.ctx.destination);
+      osc.start(startTime); osc.stop(startTime + duration);
+    },
+    // Continuous dynamic synth rhythm generation (Phonk loop simulator)
+    startContinuousBackgroundMusic() {
+      this.setup();
+      let tempo = 130; // BPM
+      let beatDuration = 60 / tempo;
+      let startTime = this.ctx.currentTime;
+      
+      const playLoop = (time) => {
+        // Continuous synth baseline kick structure
+        this.triggerTone(55, beatDuration * 0.4, 'triangle', time);
+        this.triggerTone(55, beatDuration * 0.2, 'triangle', time + beatDuration * 0.5);
+        
+        // Cyclic phonk-style cowbell accents
+        if (Math.random() > 0.4) {
+          this.triggerTone(880, 0.06, 'sine', time + beatDuration * 0.25);
+        }
+        if (Math.random() > 0.5) {
+          this.triggerTone(659, 0.06, 'sine', time + beatDuration * 0.75);
+        }
+
+        setTimeout(() => playLoop(this.ctx.currentTime), beatDuration * 1000);
+      };
+      playLoop(startTime);
+    }
+  };
+
+  // Automated HUD Performance Metrics Simulation Loop
+  setInterval(() => {
+    if (!systemActive) return;
+    const latencyVal = Math.floor(Math.random() * (48 - 14) + 14);
+    document.getElementById("hudLatency").textContent = `${latencyVal}ms`;
+  }, 2000);
+
+  let systemActive = false;
+  function triggerSystemInitialization() {
+    if (systemActive) return;
+    systemActive = true;
+    
+    AudioEngine.playBootUp();
+    // Starts continuous back-to-back background processing sounds cleanly inside rules
+    AudioEngine.startContinuousBackgroundMusic();
+    
+    document.getElementById("loaderText").textContent = "DECRYPTING...";
+    document.getElementById("loaderSub").style.display = "none";
+    
+    setTimeout(() => {
+      document.getElementById("splashScreen").style.opacity = "0";
+      document.getElementById("splashScreen").style.visibility = "hidden";
+      document.getElementById("mainApp").classList.add("active");
+    }, 1500);
+  }
+
+  const API_KEY = "luffy";
+  const BASE_URL = "https://luffy-api.is-dev.org/api/free";
+
+  async function executeDatabaseScan() {
+    AudioEngine.playClick();
+    const queryInput = document.getElementById("mobile").value.trim();
+    const consoleFeed = document.getElementById("logFeed");
+    const container = document.getElementById("nodesContainer");
+    const systemStatus = document.getElementById("nodeStatus");
+    const coreMetric = document.getElementById("hudCore");
+
+    container.innerHTML = "";
+    if (!queryInput) {
+      AudioEngine.playError();
+      consoleFeed.innerHTML = "<span class='terminal-error-msg'>[!] Scan Aborted: Target payload value empty.</span>";
+      systemStatus.textContent = "Fault Code";
+      coreMetric.textContent = "ABORTED";
+      return;
+    }
+
+    const cleanNum = queryInput.replace(/[^0-9]/g, '');
+    if (cleanNum.length < 10) {
+      AudioEngine.playError();
+      consoleFeed.innerHTML = "<span class='terminal-error-msg'>[!] Striation Error: Bounds violation mismatch. Constraints test failure.</span>";
+      systemStatus.textContent = "Syntax Error";
+      coreMetric.textContent = "ERR_BOUNDS";
+      return;
+    }
+
+    consoleFeed.textContent = "[*] Routing injection vector arrays into remote structural directory arrays...";
+    systemStatus.textContent = "Scanning Matrix";
+    coreMetric.textContent = "FETCHING";
+
+    try {
+      const response = await fetch(`${BASE_URL}?key=${API_KEY}&num=${cleanNum}`);
+      const data = await response.json();
+
+      if (data && data.results) {
+        AudioEngine.playSuccess();
+        consoleFeed.textContent = "[+] Validation sequence mapping resolved. Outputting localized directory references:";
+        systemStatus.textContent = "Link Isolated";
+        coreMetric.textContent = "RESOLVED";
+
+        const res = data.results;
+        const profileMap = {
+          "Identity Key": res.name || "Unknown Entity",
+          "Relation Core": res.fname || "N/A",
+          "Location Coordinates": res.address ? res.address.replace(/!/g, ", ") : "N/A",
+          "Carrier Stream": res.circle || "N/A"
+        };
+
+        for (const [key, value] of Object.entries(profileMap)) {
+          const node = document.createElement("div");
+          node.className = "data-node-block";
+          node.innerHTML = `<div class="node-label">${key}</div><div class="node-data-value">${value}</div>`;
+          container.appendChild(node);
+        }
+      } else {
+        AudioEngine.playError();
+        consoleFeed.innerHTML = "<span class='terminal-error-msg'>[-] Pipeline Empty: Remote transaction completed but zero matching targets exist.</span>";
+        systemStatus.textContent = "Link Isolated";
+        coreMetric.textContent = "NULL_REF";
+      }
+    } catch (error) {
+      AudioEngine.playError();
+      consoleFeed.innerHTML = "<span class='terminal-error-msg'>[!] Transmission Error: Handshake protocols terminated unexpectedly.</span>";
+      systemStatus.textContent = "Timeout Error";
+      coreMetric.textContent = "DISCONNECTED";
+    }
+  }
+
+  function clearWorkspace() {
+    AudioEngine.playClick();
+    document.getElementById("mobile").value = "";
+    document.getElementById("logFeed").textContent = "[*] Core interface deployed. Listening for validated string configurations.";
+    document.getElementById("nodesContainer").innerHTML = "";
+    document.getElementById("nodeStatus").textContent = "Link Isolated";
+    document.getElementById("hudCore").textContent = "READY";
+  }
+</script>
+</body>
+  </html>
