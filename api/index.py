@@ -43,7 +43,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <button onclick="startBoot()">ENTER SYSTEM</button>
     </div>
 
-    <!-- BOOT LOADING ANIMATION -->
+    <!-- BOOT LOADING -->
     <div class="boot" id="boot">
         <div class="title">INITIALIZING MAX-GLOW CORE v3.0...</div>
         <div id="bootLog" style="text-align:left;margin:25px 0;font-size:1.3rem;line-height:1.8;color:#00ff9f;"></div>
@@ -78,8 +78,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- METAMORPHOSIS PHONK BACKGROUND -->
-    <audio id="phonk" loop autoplay>
+    <!-- METAMORPHOSIS PHONK -->
+    <audio id="phonk" loop>
         <source src="https://files.catbox.moe/0v4p2k.mp3" type="audio/mpeg">
     </audio>
 
@@ -111,10 +111,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     setTimeout(() => {
                         bootScreen.style.display = 'none';
                         document.getElementById('main').style.display = 'block';
-                        music.play().catch(() => {});
-                    }, 800);
+                        music.play().catch(e => console.log("Phonk started on interaction"));
+                    }, 1000);
                 }
-            }, 650); // Text appears one by one
+            }, 600);
         }
 
         async function executeQuery() {
@@ -167,6 +167,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+# Scraper function (unchanged)
 def lookup_phone_number(phone_number):
     url = "https://calltracer.in"
     headers = {
