@@ -36,26 +36,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 
-    <!-- WELCOME SPLASH -->
     <div class="splash" id="splash">
         <div class="title">WELCOME TO NUMBERS TO<br>INFO ENGINE</div>
         <div style="color:#00ff9f;font-size:1.5rem;margin-bottom:30px;">MADE BY SAMARTH</div>
         <button onclick="startBoot()">ENTER SYSTEM</button>
     </div>
 
-    <!-- FAKE BOOT -->
     <div class="boot" id="boot">
         <div class="title">INITIALIZING MAX-GLOW CORE v3.0...</div>
-        <div id="bootLog" style="text-align:left;margin:25px 0;font-size:1.3rem;line-height:1.7;color:#00ff9f;">
-            > Connecting to secure nodes...<br>
-            > Bypassing tracer protection...<br>
-            > Establishing encrypted tunnel...<br>
-            > Syncing with calltracer.in mirror...<br>
-            > Data channels open.
-        </div>
+        <div id="bootLog" style="text-align:left;margin:25px 0;font-size:1.3rem;line-height:1.8;color:#00ff9f;"></div>
     </div>
 
-    <!-- MAIN INTERFACE -->
     <div class="main" id="main">
         <header style="padding:15px;text-align:center;border-bottom:3px solid #00ffff;">
             <div class="title">NUMBER TO INFO INFO ENGINE</div>
@@ -84,33 +75,42 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- METAMORPHOSIS PHONK -->
+    <!-- YOUR MP3 MUSIC - LOOPS FOREVER -->
     <audio id="phonk" loop>
-        <source src="https://files.catbox.moe/0v4p2k.mp3" type="audio/mpeg">
+        <source src="/neww.mp3" type="audio/mpeg">
     </audio>
 
     <script>
         const music = document.getElementById('phonk');
+        const bootLines = ["> Connecting to secure nodes...", "> Bypassing tracer protection...", "> Establishing encrypted tunnel...", "> Syncing with calltracer.in mirror...", "> Data channels open.", "> System ready."];
 
         function startBoot() {
             document.getElementById('splash').style.display = 'none';
-            const boot = document.getElementById('boot');
-            boot.style.display = 'block';
+            const bootScreen = document.getElementById('boot');
+            const bootLog = document.getElementById('bootLog');
+            bootScreen.style.display = 'block';
+            bootLog.innerHTML = '';
 
-            setTimeout(() => {
-                boot.style.display = 'none';
-                document.getElementById('main').style.display = 'block';
-                music.play().catch(() => {});
-            }, 3200);
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < bootLines.length) {
+                    bootLog.innerHTML += bootLines[i] + '<br>';
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        bootScreen.style.display = 'none';
+                        document.getElementById('main').style.display = 'block';
+                        music.play().catch(() => {});
+                    }, 800);
+                }
+            }, 650);
         }
 
         async function executeQuery() {
             const input = document.getElementById('phoneInput').value.trim();
             const log = document.getElementById('log');
-            if (!input) { 
-                log.innerHTML = "[!] ENTER VALID NUMBER"; 
-                return; 
-            }
+            if (!input) { log.innerHTML = "[!] ENTER VALID NUMBER"; return; }
             log.innerHTML = `[*] Querying ${input}...`;
             const resultsDiv = document.getElementById('results');
             const container = document.getElementById('dataContainer');
