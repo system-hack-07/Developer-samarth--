@@ -16,134 +16,51 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background: #000;
-            color: #00ffff;
-            font-family: 'VT323', monospace;
-            min-height: 100vh;
-            padding: 10px;
-            background-image: 
-                linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
-            background-size: 25px 25px;
-        }
-        .main {
-            max-width: 480px;
-            margin: 0 auto;
-            border: 4px solid #00ffff;
-            box-shadow: 0 0 40px #00ffff, inset 0 0 30px rgba(0,255,255,0.2);
-            border-radius: 12px;
-            overflow: hidden;
-            background: #0a0a0a;
-        }
-        header {
-            background: #000;
-            padding: 20px 15px;
-            text-align: center;
-            border-bottom: 3px solid #00ffff;
-        }
-        .title {
-            font-size: 1.65rem;
-            line-height: 1.1;
-            text-transform: uppercase;
-            text-shadow: 0 0 15px #00ffff;
-        }
-        .dev {
-            color: #00ff9f;
-            margin-top: 8px;
-            font-size: 1.3rem;
-        }
-        .isolated {
-            display: inline-block;
-            background: #000;
-            border: 2px solid #00ff9f;
-            color: #00ff9f;
-            padding: 8px 25px;
-            border-radius: 30px;
-            margin: 15px 0;
-            font-size: 1.1rem;
-            box-shadow: 0 0 20px #00ff9f;
-        }
-        .status-bar {
-            display: flex;
-            justify-content: space-around;
-            background: #000;
-            padding: 12px;
-            border-bottom: 2px solid #00ffff;
-        }
-        .input-box {
-            margin: 15px;
-            background: #000;
-            border: 3px solid #00ffff;
-            border-radius: 8px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #00ffff;
-            font-size: 1.4rem;
-            outline: none;
-        }
-        .buttons {
-            display: flex;
-            gap: 12px;
-            margin: 0 15px 15px;
-        }
-        button {
-            flex: 1;
-            padding: 14px;
-            font-size: 1.3rem;
-            border: 3px solid #00ffff;
-            background: #000;
-            color: #00ffff;
-            cursor: pointer;
-            border-radius: 6px;
-            box-shadow: 0 0 15px #00ffff;
-        }
-        .execute { border-color: #00ff9f; color: #00ff9f; }
-        .log {
-            margin: 15px;
-            background: #000;
-            border: 3px solid #00ffff;
-            padding: 15px;
-            min-height: 110px;
-            font-size: 1.25rem;
-            line-height: 1.4;
-            color: #00ff9f;
-        }
-        .note {
-            margin: 15px;
-            border: 3px dashed #ff0044;
-            padding: 12px;
-            color: #ffcccc;
-            font-size: 1.15rem;
-        }
-        footer {
-            padding: 15px;
-            text-align: center;
-            font-size: 1.1rem;
-            border-top: 2px solid #00ffff;
-        }
-        .glow { text-shadow: 0 0 20px currentColor; }
+        body { background:#000; color:#00ffff; font-family:'VT323', monospace; min-height:100vh; padding:10px;
+               background-image: linear-gradient(rgba(0,255,255,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(0,255,255,0.03)1px,transparent 1px); background-size:25px 25px; }
+        .splash, .boot, .main { max-width:480px; margin:0 auto; border:4px solid #00ffff; box-shadow:0 0 40px #00ffff; border-radius:12px; overflow:hidden; background:#0a0a0a; }
+        .splash { height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px; }
+        .title { font-size:1.8rem; text-shadow:0 0 20px #00ffff; margin-bottom:20px; }
+        button { padding:15px 40px; font-size:1.4rem; background:#000; color:#00ff9f; border:3px solid #00ff9f; cursor:pointer; box-shadow:0 0 20px #00ff9f; margin-top:30px; }
+        .boot { padding:30px 20px; text-align:center; display:none; }
+        .main { display:none; }
+        .input-box { margin:15px; background:#000; border:3px solid #00ffff; border-radius:8px; padding:12px; display:flex; align-items:center; gap:10px; }
+        input { flex:1; background:transparent; border:none; color:#00ffff; font-size:1.4rem; outline:none; }
+        .buttons { display:flex; gap:12px; margin:0 15px 15px; }
+        button.execute { flex:1; padding:14px; font-size:1.3rem; border:3px solid #00ff9f; color:#00ff9f; }
+        .log, .results { margin:15px; }
+        .log { background:#000; border:3px solid #00ffff; padding:15px; min-height:90px; font-size:1.25rem; line-height:1.4; color:#00ff9f; }
+        .data-box { background:#000; border:2px solid #00ffff; padding:12px; margin-bottom:10px; border-radius:6px; }
+        .label { color:#00ff9f; } .value { color:#fff; word-break:break-all; }
     </style>
 </head>
 <body>
-    <div class="main">
-        <header>
-            <div class="title glow">WELCOME TO NUMBER TO INFO<br>INFO ENGINE</div>
-            <div class="dev">Developer is SAMARTH</div>
-            <div class="isolated">● LINK ISOLATED</div>
-        </header>
 
-        <div class="status-bar">
-            <div>LATENCY: <span style="color:#00ff9f">23ms</span></div>
-            <div>NODE CORE: <span style="color:#00ff9f">READY</span></div>
+    <!-- WELCOME SPLASH -->
+    <div class="splash" id="splash">
+        <div class="title">WELCOME TO NUMBERS TO<br>INFO ENGINE</div>
+        <div style="color:#00ff9f;font-size:1.5rem;margin-bottom:30px;">MADE BY SAMARTH</div>
+        <button onclick="startBoot()">ENTER SYSTEM</button>
+    </div>
+
+    <!-- FAKE BOOT -->
+    <div class="boot" id="boot">
+        <div class="title">INITIALIZING MAX-GLOW CORE v3.0...</div>
+        <div id="bootLog" style="text-align:left;margin:25px 0;font-size:1.3rem;line-height:1.7;color:#00ff9f;">
+            > Connecting to secure nodes...<br>
+            > Bypassing tracer protection...<br>
+            > Establishing encrypted tunnel...<br>
+            > Syncing with calltracer.in mirror...<br>
+            > Data channels open.
         </div>
+    </div>
+
+    <!-- MAIN INTERFACE -->
+    <div class="main" id="main">
+        <header style="padding:15px;text-align:center;border-bottom:3px solid #00ffff;">
+            <div class="title">NUMBER TO INFO INFO ENGINE</div>
+            <div style="color:#00ff9f;">Developer: SAMARTH</div>
+        </header>
 
         <div class="input-box">
             <span style="font-size:1.8rem">📞</span>
@@ -155,34 +72,51 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <button onclick="resetAll()">RESET</button>
         </div>
 
-        <div class="log" id="log">
-            [*] Core interface deployed.<br>
-            Listening for validated string configurations.
+        <div class="log" id="log">[*] Core online. Ready for query.</div>
+
+        <div class="results" id="results" style="display:none;">
+            <div style="text-align:center;color:#00ff9f;margin:10px 0;">EXTRACTION COMPLETE</div>
+            <div id="dataContainer"></div>
         </div>
 
-        <div class="note">
-            <strong>NOTE</strong><br>
-            Those Informations are not coming [There data is not leaked in any database] [your number is safe]
+        <div style="margin:15px;padding:12px;border:3px dashed #ff0044;color:#ffcccc;">
+            NOTE: Those Informations are not coming [There data is not leaked in any database] [your number is safe]
         </div>
-
-        <footer>
-            Disclaimer: This application environment is engineered strictly for educational purpose processing. External framework exploitation is prohibited.<br><br>
-            <strong>Max-Glow Core v3.0</strong>  @Samarth
-        </footer>
     </div>
 
+    <!-- METAMORPHOSIS PHONK -->
+    <audio id="phonk" loop>
+        <source src="https://files.catbox.moe/0v4p2k.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
+        const music = document.getElementById('phonk');
+
+        function startBoot() {
+            document.getElementById('splash').style.display = 'none';
+            const boot = document.getElementById('boot');
+            boot.style.display = 'block';
+
+            setTimeout(() => {
+                boot.style.display = 'none';
+                document.getElementById('main').style.display = 'block';
+                music.play().catch(() => {});
+            }, 3200);
+        }
+
         async function executeQuery() {
             const input = document.getElementById('phoneInput').value.trim();
             const log = document.getElementById('log');
-            
-            if (!input) {
-                log.innerHTML = "[!] ERROR: Enter a valid number";
-                return;
+            if (!input) { 
+                log.innerHTML = "[!] ENTER VALID NUMBER"; 
+                return; 
             }
-            
-            log.innerHTML = `[*] Querying ${input}...<br>[+] Connecting to secure nodes...`;
-            
+            log.innerHTML = `[*] Querying ${input}...`;
+            const resultsDiv = document.getElementById('results');
+            const container = document.getElementById('dataContainer');
+            container.innerHTML = '';
+            resultsDiv.style.display = 'none';
+
             try {
                 const res = await fetch('/lookup', {
                     method: 'POST',
@@ -192,26 +126,29 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 const data = await res.json();
                 
                 if (data.error) {
-                    log.innerHTML += `<br>[!] ERROR: ${data.error}`;
+                    log.innerHTML += `<br>[!] ${data.error}`;
                     return;
                 }
                 
-                log.innerHTML += `<br>[+] Data retrieved successfully for ${input}.`;
+                log.innerHTML += `<br>[+] Data retrieved successfully.`;
                 
-                // Optional: Show results in log (you can expand this later)
                 Object.keys(data).forEach(key => {
-                    if (key !== "Number") {
-                        log.innerHTML += `<br>→ ${key}: ${data[key]}`;
-                    }
+                    const box = document.createElement('div');
+                    box.className = 'data-box';
+                    box.innerHTML = `<div class="label">\( {key.toUpperCase()}</div><div class="value"> \){data[key] || 'N/A'}</div>`;
+                    container.appendChild(box);
                 });
+                
+                resultsDiv.style.display = 'block';
             } catch(e) {
-                log.innerHTML += `<br>[!] Network error. Try again.`;
+                log.innerHTML += `<br>[!] Network error.`;
             }
         }
 
         function resetAll() {
             document.getElementById('phoneInput').value = '';
-            document.getElementById('log').innerHTML = '[*] Core interface deployed.<br>Listening for validated string configurations.';
+            document.getElementById('log').innerHTML = '[*] Core online. Ready for query.';
+            document.getElementById('results').style.display = 'none';
         }
     </script>
 </body>
@@ -284,4 +221,4 @@ def lookup():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000, debug=True)
