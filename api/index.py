@@ -75,8 +75,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- YOUR PHONK FILE - REPEATS UNTIL PAGE CLOSED -->
     <audio id="phonk" loop>
-        <source src="https://files.catbox.moe/0v4p2k.mp3" type="audio/mpeg">
+        <source src="/neww.mp3" type="audio/mpeg">
     </audio>
 
     <script>
@@ -165,7 +166,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 def lookup_phone_number(phone_number):
     url = "https://calltracer.in"
-    headers = {"Host": "calltracer.in","User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)","Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Content-Type": "application/x-www-form-urlencoded"}
+    headers = {
+        "Host": "calltracer.in",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
     payload = {"country": "IN", "q": phone_number}
 
     try:
