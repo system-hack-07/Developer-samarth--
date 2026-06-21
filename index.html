@@ -564,9 +564,9 @@
     }, 1500);
   }
 
-  const API_KEY = "luffy";
-  const BASE_URL = "https://luffy-api.is-dev.org/api/free";
-
+  const API_KEY = "darkz";
+const BASE_URL = "https://rootx-osint.in/";
+ 
   async function executeDatabaseScan() {
     AudioEngine.playClick();
     const queryInput = document.getElementById("mobile").value.trim();
@@ -598,7 +598,7 @@
     coreMetric.textContent = "FETCHING";
 
     try {
-      const response = await fetch(`${BASE_URL}?key=${API_KEY}&num=${cleanNum}`);
+      const response = await fetch(`${BASE_URL}?type=num&key=${API_KEY}&query=${cleanNum}`);
       const data = await response.json();
 
       if (data && data.results) {
