@@ -36,20 +36,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </head>
 <body>
 
-    <!-- WELCOME -->
     <div class="splash" id="splash">
         <div class="title">WELCOME TO NUMBERS TO<br>INFO ENGINE</div>
         <div style="color:#00ff9f;font-size:1.5rem;margin-bottom:30px;">MADE BY SAMARTH</div>
         <button onclick="startBoot()">ENTER SYSTEM</button>
     </div>
 
-    <!-- BOOT -->
     <div class="boot" id="boot">
         <div class="title">INITIALIZING MAX-GLOW CORE v3.0...</div>
         <div id="bootLog" style="text-align:left;margin:25px 0;font-size:1.3rem;line-height:1.8;color:#00ff9f;"></div>
     </div>
 
-    <!-- MAIN -->
     <div class="main" id="main">
         <header style="padding:15px;text-align:center;border-bottom:3px solid #00ffff;">
             <div class="title">NUMBER TO INFO INFO ENGINE</div>
@@ -78,14 +75,20 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- PHONK -->
     <audio id="phonk" loop>
         <source src="https://files.catbox.moe/0v4p2k.mp3" type="audio/mpeg">
     </audio>
 
     <script>
         const music = document.getElementById('phonk');
-        const bootLines = ["> Connecting to secure nodes...", "> Bypassing tracer protection...", "> Establishing encrypted tunnel...", "> Syncing with calltracer.in mirror...", "> Data channels open.", "> System ready."];
+        const bootLines = [
+            "> Connecting to secure nodes...",
+            "> Bypassing tracer protection...",
+            "> Establishing encrypted tunnel...",
+            "> Syncing with calltracer.in mirror...",
+            "> Data channels open.",
+            "> System ready."
+        ];
 
         function startBoot() {
             document.getElementById('splash').style.display = 'none';
@@ -113,7 +116,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         async function executeQuery() {
             const input = document.getElementById('phoneInput').value.trim();
             const log = document.getElementById('log');
-            if (!input) { log.innerHTML = "[!] ENTER VALID NUMBER"; return; }
+            if (!input) { 
+                log.innerHTML = "[!] ENTER VALID NUMBER"; 
+                return; 
+            }
             log.innerHTML = `[*] Querying ${input}...`;
             const resultsDiv = document.getElementById('results');
             const container = document.getElementById('dataContainer');
@@ -173,12 +179,34 @@ def lookup_phone_number(phone_number):
                 tr = cell.find_parent("tr")
                 if tr and tr.find_all("td"):
                     tds = tr.find_all("td")
-                    if len(tds) > 1: return tds[1].get_text(strip=True)
+                    if len(tds) > 1:
+                        return tds[1].get_text(strip=True)
             return "N/A"
 
-        data = {"Number": phone_number,"Complaints": get_value("Complaints"),"Owner Name": get_value("Owner Name"),"SIM Card": get_value("SIM card"),"Mobile State": get_value("Mobile State"),"IMEI Number": get_value("IMEI number"),"MAC Address": get_value("MAC address"),"Connection": get_value("Connection"),"IP Address": get_value("IP address"),"Owner Address": get_value("Owner Address"),"Hometown": get_value("Hometown"),"Reference City": get_value("Refrence City"),"Owner Personality": get_value("Owner Personality"),"Language": get_value("Language"),"Mobile Locations": get_value("Mobile Locations"),"Country": get_value("Country"),"Tracking History": get_value("Tracking History"),"Tracker ID": get_value("Tracker Id"),"Tower Locations": get_value("Tower Locations")}
+        data = {
+            "Number": phone_number,
+            "Complaints": get_value("Complaints"),
+            "Owner Name": get_value("Owner Name"),
+            "SIM Card": get_value("SIM card"),
+            "Mobile State": get_value("Mobile State"),
+            "IMEI Number": get_value("IMEI number"),
+            "MAC Address": get_value("MAC address"),
+            "Connection": get_value("Connection"),
+            "IP Address": get_value("IP address"),
+            "Owner Address": get_value("Owner Address"),
+            "Hometown": get_value("Hometown"),
+            "Reference City": get_value("Refrence City"),
+            "Owner Personality": get_value("Owner Personality"),
+            "Language": get_value("Language"),
+            "Mobile Locations": get_value("Mobile Locations"),
+            "Country": get_value("Country"),
+            "Tracking History": get_value("Tracking History"),
+            "Tracker ID": get_value("Tracker Id"),
+            "Tower Locations": get_value("Tower Locations"),
+        }
 
-        if all(v == "N/A" for v in list(data.values())[1:]): return {"error": "No data found for this number."}
+        if all(v == "N/A" for v in list(data.values())[1:]):
+            return {"error": "No data found for this number."}
         return data
     except Exception as e:
         return {"error": f"Error: {str(e)}"}
@@ -191,7 +219,8 @@ def index():
 def lookup():
     data = request.get_json()
     number = data.get('number') if data else None
-    if not number: return jsonify({"error": "Number required"})
+    if not number:
+        return jsonify({"error": "Number required"})
     result = lookup_phone_number(number)
     return jsonify(result)
 
