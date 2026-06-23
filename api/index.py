@@ -109,7 +109,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         async function executeQuery() {
             const input = document.getElementById('phoneInput').value.trim();
             const log = document.getElementById('log');
-            if (!input) { log.innerHTML = "[!] ENTER VALID NUMBER"; return; }
+            if (!input) { 
+                log.innerHTML = "[!] ENTER VALID NUMBER"; 
+                return; 
+            }
             log.innerHTML = `[*] Querying ${input}...`;
             const resultsDiv = document.getElementById('results');
             const container = document.getElementById('dataContainer');
