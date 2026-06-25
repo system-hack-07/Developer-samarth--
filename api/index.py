@@ -1,156 +1,136 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 import requests
 from bs4 import BeautifulSoup
 import os
-import sqlite3
-from datetime import datetime
+import time
 import json
+from datetime import datetime
 import base64
 from io import BytesIO
+
+# ============================================================
+# SELENIUM FOR SCREENSHOTS
+# ============================================================
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-import threading
-import time
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 app = Flask(__name__)
 
-# ============================================================
-# DATABASE SETUP (Option 1)
-# ============================================================
-
-def init_db():
-    """Initialize SQLite database for history"""
-    conn = sqlite3.connect('lookups.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        phone TEXT NOT NULL,
-        result TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        ip_address TEXT,
-        screenshot TEXT
-    )''')
-    conn.commit()
-    conn.close()
-    print("✅ Database initialized: lookups.db")
-
-def save_lookup(phone, result, ip_address=None, screenshot=None):
-    """Save lookup result to database"""
-    try:
-        conn = sqlite3.connect('lookups.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO history 
-                     (phone, result, timestamp, ip_address, screenshot) 
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (phone, json.dumps(result), datetime.now().isoformat(), ip_address, screenshot))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"❌ Database error: {e}")
-        return False
-
-def get_history(limit=50):
-    """Get recent lookup history"""
-    try:
-        conn = sqlite3.connect('lookups.db')
-        c = conn.cursor()
-        c.execute('''SELECT id, phone, timestamp, result 
-                     FROM history 
-                     ORDER BY id DESC 
-                     LIMIT ?''', (limit,))
-        rows = c.fetchall()
-        conn.close()
-        
-        history = []
-        for row in rows:
-            history.append({
-                'id': row[0],
-                'phone': row[1],
-                'timestamp': row[2],
-                'result': json.loads(row[3]) if row[3] else {}
-            })
-        return history
-    except Exception as e:
-        print(f"❌ History error: {e}")
-        return []
-
-def get_history_by_phone(phone):
-    """Get history for a specific phone number"""
-    try:
-        conn = sqlite3.connect('lookups.db')
-        c = conn.cursor()
-        c.execute('''SELECT id, phone, timestamp, result, screenshot 
-                     FROM history 
-                     WHERE phone = ? 
-                     ORDER BY id DESC''', (phone,))
-        rows = c.fetchall()
-        conn.close()
-        
-        history = []
-        for row in rows:
-            history.append({
-                'id': row[0],
-                'phone': row[1],
-                'timestamp': row[2],
-                'result': json.loads(row[3]) if row[3] else {},
-                'screenshot': row[4] if row[4] else None
-            })
-        return history
-    except Exception as e:
-        print(f"❌ History error: {e}")
-        return []
+# Create screenshot folder
+SCREENSHOT_FOLDER = 'screenshots'
+if not os.path.exists(SCREENSHOT_FOLDER):
+    os.makedirs(SCREENSHOT_FOLDER)
 
 # ============================================================
-# SCREENSHOT CAPTURE (Option 15)
+# SCREENSHOT FUNCTION
 # ============================================================
 
-def capture_screenshot(url, phone_number):
-    """Capture screenshot of lookup result page using Selenium"""
+def take_screenshot(phone_number, data):
+    """Take screenshot of lookup results"""
     try:
-        # Chrome options for headless mode
+        # Setup headless Chrome
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--window-size=1200,800')
-        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--window-size=800,600")
         
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.get(url)
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=chrome_options
+        )
         
-        # Wait for page to load
-        time.sleep(2)
+        # Create HTML page with results
+        html_content = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ 
+                    background: #0a0e17; 
+                    color: #e8f0fe; 
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    padding: 30px;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }}
+                h1 {{ 
+                    color: #00c8ff;
+                    font-size: 24px;
+                    border-bottom: 2px solid #00c8ff;
+                    padding-bottom: 10px;
+                }}
+                .result {{
+                    background: rgba(255,255,255,0.05);
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-top: 20px;
+                }}
+                .row {{
+                    display: flex;
+                    padding: 8px 0;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                }}
+                .key {{
+                    color: #00c8ff;
+                    font-weight: bold;
+                    width: 180px;
+                    flex-shrink: 0;
+                }}
+                .value {{
+                    color: #e8f0fe;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    color: rgba(255,255,255,0.2);
+                    font-size: 12px;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <h1>📱 SAMARTH INTELLIGENCE REPORT</h1>
+            <div class="result">
+                <div class="row"><span class="key">Phone Number:</span><span class="value">{phone_number}</span></div>
+                <div class="row"><span class="key">Timestamp:</span><span class="value">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</span></div>
+        '''
+        
+        for key, val in data.items():
+            if val and val != 'N/A' and key != 'Number':
+                html_content += f'<div class="row"><span class="key">{key}:</span><span class="value">{val}</span></div>'
+        
+        html_content += '''
+            </div>
+            <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
+        </body>
+        </html>
+        '''
+        
+        # Save HTML to temp file
+        temp_html = os.path.join(SCREENSHOT_FOLDER, f'temp_{phone_number}.html')
+        with open(temp_html, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        # Load HTML in headless browser
+        driver.get(f'file://{os.path.abspath(temp_html)}')
+        time.sleep(1)  # Wait for render
         
         # Take screenshot
-        screenshot = driver.get_screenshot_as_base64()
-        driver.quit()
+        screenshot_path = os.path.join(SCREENSHOT_FOLDER, f'screenshot_{phone_number}_{int(time.time())}.png')
+        driver.save_screenshot(screenshot_path)
         
-        return screenshot
+        driver.quit()
+        os.remove(temp_html)  # Cleanup temp HTML
+        
+        return screenshot_path
+        
     except Exception as e:
-        print(f"❌ Screenshot error: {e}")
+        print(f"Screenshot error: {str(e)}")
         return None
 
-def capture_screenshot_async(url, phone_number):
-    """Capture screenshot in background thread"""
-    def capture():
-        screenshot = capture_screenshot(url, phone_number)
-        if screenshot:
-            # Save to database
-            conn = sqlite3.connect('lookups.db')
-            c = conn.cursor()
-            c.execute('''UPDATE history 
-                         SET screenshot = ? 
-                         WHERE phone = ? AND screenshot IS NULL
-                         ORDER BY id DESC LIMIT 1''', (screenshot, phone_number))
-            conn.commit()
-            conn.close()
-            print(f"✅ Screenshot saved for {phone_number}")
-    
-    thread = threading.Thread(target=capture)
-    thread.daemon = True
-    thread.start()
-    return thread
 
 # ============================================================
 # YOUR ORIGINAL LOOKUP FUNCTION
@@ -217,12 +197,21 @@ def lookup_phone_number(phone_number):
 
 
 # ============================================================
-# ROUTE TO SERVE MP3 FILE FROM DOWNLOAD FOLDER
+# ROUTE TO SERVE MP3 FILE
 # ============================================================
 
 @app.route('/download/<path:filename>')
 def serve_audio(filename):
     return send_from_directory('download', filename)
+
+
+# ============================================================
+# ROUTE TO SERVE SCREENSHOTS
+# ============================================================
+
+@app.route('/screenshots/<path:filename>')
+def serve_screenshot(filename):
+    return send_from_directory(SCREENSHOT_FOLDER, filename)
 
 
 # ============================================================
@@ -636,7 +625,7 @@ BOOT_HTML = '''
 
 
 # ============================================================
-# PAGE 3: MAIN DASHBOARD WITH HISTORY
+# PAGE 3: SAMARTH NUMBER TO ADDRESS (WITH SCREENSHOT BUTTON)
 # ============================================================
 
 MAIN_HTML = '''
@@ -694,20 +683,14 @@ MAIN_HTML = '''
             color: #ffffff;
             border: 2px solid #333333;
         }
-        body.dark .history-table {
-            border-color: #1a1a1a;
+        body.dark .screenshot-btn {
+            background: #1a1a1a;
+            color: #00ff88;
+            border: 2px solid #00ff88;
         }
-        body.dark .history-table th {
-            background: #0a0a0a;
-            color: #888888;
-            border-color: #1a1a1a;
-        }
-        body.dark .history-table td {
-            border-color: #1a1a1a;
-            color: #aaaaaa;
-        }
-        body.dark .history-table tr:hover {
-            background: #0a0a0a;
+        body.dark .screenshot-btn:hover {
+            background: #00ff88;
+            color: #000000;
         }
         
         body.light {
@@ -759,20 +742,14 @@ MAIN_HTML = '''
             background: #000000;
             color: #ffffff;
         }
-        body.light .history-table {
-            border-color: #dddddd;
+        body.light .screenshot-btn {
+            background: #eeeeee;
+            color: #008844;
+            border: 2px solid #008844;
         }
-        body.light .history-table th {
-            background: #f5f5f5;
-            color: #555555;
-            border-color: #dddddd;
-        }
-        body.light .history-table td {
-            border-color: #dddddd;
-            color: #555555;
-        }
-        body.light .history-table tr:hover {
-            background: #f5f5f5;
+        body.light .screenshot-btn:hover {
+            background: #008844;
+            color: #ffffff;
         }
         
         body {
@@ -781,7 +758,7 @@ MAIN_HTML = '''
             padding: 30px 20px;
             transition: all 0.3s ease;
         }
-        .wrap { max-width: 950px; margin: 0 auto; }
+        .wrap { max-width: 850px; margin: 0 auto; }
         .header {
             text-align: center;
             padding-bottom: 20px;
@@ -809,7 +786,6 @@ MAIN_HTML = '''
             border-radius: 16px;
             padding: 30px 35px;
             transition: all 0.3s ease;
-            margin-bottom: 25px;
         }
         .card-label {
             font-size: 0.7rem;
@@ -845,6 +821,24 @@ MAIN_HTML = '''
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: 'Arial Black', sans-serif;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .screenshot-btn {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Arial Black', sans-serif;
+            background: transparent;
         }
         #result {
             margin-top: 30px;
@@ -887,98 +881,11 @@ MAIN_HTML = '''
             font-family: 'Arial Black', sans-serif;
         }
         
-        /* History Table */
-        .history-section {
-            margin-top: 30px;
-        }
-        .history-section h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
-            color: #888888;
-        }
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 2px solid;
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-        }
-        .history-table th {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 2px solid;
-            letter-spacing: 1px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.65rem;
-            transition: all 0.3s ease;
-        }
-        .history-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid;
-            transition: all 0.3s ease;
-        }
-        .history-table tr:hover {
-            transition: all 0.3s ease;
-        }
-        .history-table .view-btn {
-            padding: 4px 12px;
-            border-radius: 5px;
-            font-size: 0.6rem;
-            font-weight: 900;
-            cursor: pointer;
-            font-family: 'Arial Black', sans-serif;
-            background: #1a1a1a;
-            color: #ffffff;
-            border: 1px solid #333333;
-        }
-        .history-table .view-btn:hover {
-            background: #ffffff;
-            color: #000000;
-        }
         .screenshot-preview {
-            max-width: 200px;
-            max-height: 100px;
-            border-radius: 5px;
-            border: 1px solid #333333;
-            cursor: pointer;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-        }
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: #ffffff;
-            font-size: 2rem;
-            cursor: pointer;
-            font-weight: 900;
-        }
-        .no-data {
-            color: #444444;
-            text-align: center;
-            padding: 20px;
-            font-weight: 700;
-            font-size: 0.9rem;
+            margin-top: 20px;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 2px solid #1a1a1a;
         }
         
         @media (max-width:600px) {
@@ -989,9 +896,8 @@ MAIN_HTML = '''
             .btn { width: 100%; text-align: center; }
             .toggle-wrap { top: 10px; right: 10px; }
             .toggle-btn { padding: 6px 12px; font-size: 0.6rem; }
-            .history-table { font-size: 0.6rem; }
-            .history-table th, .history-table td { padding: 6px 8px; }
-            .screenshot-preview { max-width: 80px; max-height: 50px; }
+            .btn-group { flex-direction: column; }
+            .screenshot-btn { width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -1004,18 +910,11 @@ MAIN_HTML = '''
         <button class="toggle-btn" onclick="toggleMode()">🌓 Toggle</button>
     </div>
 
-    <!-- Modal for screenshot -->
-    <div class="modal" id="screenshotModal" onclick="closeModal()">
-        <span class="modal-close">&times;</span>
-        <img id="modalImage" src="" alt="Screenshot">
-    </div>
-
     <div class="wrap">
         <div class="header">
             <h1>WELCOME TO <span>SAMARTH</span></h1>
             <div class="sub">Number to Address Website</div>
         </div>
-        
         <div class="card">
             <div class="card-label">Enter Target Number</div>
             <form id="lookupForm">
@@ -1025,24 +924,15 @@ MAIN_HTML = '''
                 </div>
             </form>
             <div id="result">Awaiting input...</div>
+            <div id="screenshotArea"></div>
         </div>
-
-        <!-- HISTORY SECTION -->
-        <div class="card history-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-                <h2 style="font-weight:900; letter-spacing:2px; color:#888888; font-size:1rem;">📜 LOOKUP HISTORY</h2>
-                <button class="btn" onclick="refreshHistory()" style="padding:8px 20px; font-size:0.6rem;">🔄 Refresh</button>
-            </div>
-            <div id="historyContainer">
-                <div class="no-data">Loading history...</div>
-            </div>
-        </div>
-
         <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
     </div>
 
     <script>
-        // Audio autoplay
+        let lastData = null;
+        let lastPhone = null;
+
         document.addEventListener('click', function() {
             var audio = document.getElementById('bg-audio');
             if (audio.paused) {
@@ -1052,10 +942,8 @@ MAIN_HTML = '''
         window.addEventListener('load', function() {
             var audio = document.getElementById('bg-audio');
             audio.play().catch(function(e) {});
-            loadHistory();
         });
 
-        // Dark/Light toggle
         function toggleMode() {
             const body = document.body;
             if (body.classList.contains('dark')) {
@@ -1076,76 +964,40 @@ MAIN_HTML = '''
             }
         });
 
-        // Modal functions
-        function openModal(imageSrc) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('screenshotModal').style.display = 'flex';
-        }
-        function closeModal() {
-            document.getElementById('screenshotModal').style.display = 'none';
-        }
-
-        // Load history
-        async function loadHistory() {
+        // Take Screenshot
+        async function takeScreenshot() {
+            if (!lastPhone || !lastData) {
+                alert('Please trace a number first!');
+                return;
+            }
+            
+            const area = document.getElementById('screenshotArea');
+            area.innerHTML = '<span style="color:#444444;">📸 Capturing screenshot... Please wait.</span>';
+            
             try {
-                const res = await fetch('/history');
-                const data = await res.json();
-                const container = document.getElementById('historyContainer');
+                const res = await fetch('/screenshot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: lastPhone, data: lastData })
+                });
+                const result = await res.json();
                 
-                if (data.history && data.history.length > 0) {
-                    let html = `<table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Phone</th>
-                                <th>Timestamp</th>
-                                <th>Owner</th>
-                                <th>Screenshot</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                    
-                    data.history.forEach((item, index) => {
-                        const result = item.result || {};
-                        const owner = result['Owner Name'] || 'N/A';
-                        const screenshot = item.screenshot ? 
-                            `<img src="data:image/png;base64,${item.screenshot}" 
-                                  class="screenshot-preview" 
-                                  onclick="openModal('data:image/png;base64,${item.screenshot}')"
-                                  alt="Screenshot">` : 
-                            '<span style="color:#444444;">No SS</span>';
-                        
-                        html += `<tr>
-                            <td>${index + 1}</td>
-                            <td>${item.phone}</td>
-                            <td style="font-size:0.7rem;">${item.timestamp.substring(0,16)}</td>
-                            <td>${owner}</td>
-                            <td>${screenshot}</td>
-                            <td>
-                                <button class="view-btn" onclick="viewHistory('${item.phone}')">View</button>
-                            </td>
-                        </tr>`;
-                    });
-                    
-                    html += `</tbody></table>`;
-                    container.innerHTML = html;
+                if (result.success) {
+                    area.innerHTML = `
+                        <div style="margin-top:15px; padding:15px; background:rgba(0,255,136,0.05); border:1px solid #00ff88; border-radius:8px;">
+                            <span style="color:#00ff88;">✅ Screenshot captured!</span>
+                            <br><br>
+                            <a href="${result.url}" download target="_blank" style="color:#00c8ff; text-decoration:underline;">📥 Download Screenshot</a>
+                            <br><br>
+                            <img src="${result.url}" class="screenshot-preview" style="max-width:100%; max-height:400px; border:2px solid #1a1a1a; border-radius:8px;">
+                        </div>
+                    `;
                 } else {
-                    container.innerHTML = '<div class="no-data">📭 No history yet. Start tracing numbers!</div>';
+                    area.innerHTML = `<span style="color:#ff3333;">❌ Screenshot failed: ${result.message}</span>`;
                 }
             } catch(err) {
-                document.getElementById('historyContainer').innerHTML = 
-                    '<div class="no-data" style="color:#ff3333;">❌ Error loading history</div>';
+                area.innerHTML = `<span style="color:#ff3333;">❌ Error: ${err.message}</span>`;
             }
-        }
-
-        function refreshHistory() {
-            loadHistory();
-        }
-
-        async function viewHistory(phone) {
-            document.getElementById('phone').value = phone;
-            document.getElementById('lookupForm').dispatchEvent(new Event('submit'));
         }
 
         // Lookup form handler
@@ -1153,6 +1005,9 @@ MAIN_HTML = '''
             e.preventDefault();
             const phone = document.getElementById('phone').value;
             const resultDiv = document.getElementById('result');
+            const screenshotArea = document.getElementById('screenshotArea');
+            screenshotArea.innerHTML = '';
+            
             resultDiv.innerHTML = '<span style="color:#444444;">Processing request...</span>';
             try {
                 const res = await fetch('/lookup', {
@@ -1161,6 +1016,7 @@ MAIN_HTML = '''
                     body:'phone='+encodeURIComponent(phone)
                 });
                 const data = await res.json();
+                
                 if (data.error) {
                     resultDiv.innerHTML = `<span class="err">⚠ ${data.error}</span>`;
                 } else {
@@ -1171,8 +1027,13 @@ MAIN_HTML = '''
                         }
                     }
                     resultDiv.innerHTML = html;
-                    // Refresh history after lookup
-                    setTimeout(loadHistory, 1000);
+                    
+                    // Store for screenshot
+                    lastPhone = phone;
+                    lastData = data;
+                    
+                    // Show screenshot button
+                    resultDiv.innerHTML += `<br><button class="screenshot-btn" onclick="takeScreenshot()">📸 Take Screenshot</button>`;
                 }
             } catch(err) {
                 resultDiv.innerHTML = '<span class="err">⚠ Connection error. Retry.</span>';
@@ -1182,6 +1043,39 @@ MAIN_HTML = '''
 </body>
 </html>
 '''
+
+
+# ============================================================
+# SCREENSHOT API ROUTE
+# ============================================================
+
+@app.route('/screenshot', methods=['POST'])
+def screenshot_api():
+    try:
+        data = request.get_json()
+        phone = data.get('phone')
+        result_data = data.get('data')
+        
+        if not phone or not result_data:
+            return jsonify({"success": False, "message": "Missing data"}), 400
+        
+        # Take screenshot
+        screenshot_path = take_screenshot(phone, result_data)
+        
+        if screenshot_path and os.path.exists(screenshot_path):
+            filename = os.path.basename(screenshot_path)
+            url = f"/screenshots/{filename}"
+            return jsonify({
+                "success": True,
+                "url": url,
+                "filename": filename,
+                "message": "Screenshot captured successfully"
+            })
+        else:
+            return jsonify({"success": False, "message": "Screenshot capture failed"}), 500
+            
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 # ============================================================
@@ -1205,33 +1099,8 @@ def lookup():
     phone = request.form.get('phone')
     if not phone:
         return jsonify({"error": "Phone number required"}), 400
-    
-    # Get client IP
-    ip_address = request.remote_addr
-    
-    # Perform lookup
     result = lookup_phone_number(phone)
-    
-    # Save to database
-    save_lookup(phone, result, ip_address)
-    
-    # Capture screenshot asynchronously (Option 15)
-    # This will save screenshot to database in background
-    capture_screenshot_async(f"{request.host_url}main", phone)
-    
     return jsonify(result)
-
-@app.route('/history')
-def history():
-    """Get lookup history"""
-    history_data = get_history(50)
-    return jsonify({"history": history_data})
-
-@app.route('/history/<phone>')
-def history_by_phone(phone):
-    """Get history for specific phone"""
-    history_data = get_history_by_phone(phone)
-    return jsonify({"history": history_data})
 
 
 # ============================================================
@@ -1239,16 +1108,13 @@ def history_by_phone(phone):
 # ============================================================
 
 if __name__ == '__main__':
-    # Initialize database
-    init_db()
-    
     print("""
-    ╔══════════════════════════════════════════════════════════╗
-    ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE                    ║
+    ╔═══════════════════════════════════════════════════════════╗
+    ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE                     ║
     ║  http://127.0.0.1:5000                                   ║
     ║                                                          ║
-    ║  ✅ Database History (Option 1)                         ║
-    ║  ✅ Screenshot Capture (Option 15)                      ║
-    ╚══════════════════════════════════════════════════════════╝
+    ║  📸 Screenshot Feature: Captures results as PNG          ║
+    ║  📁 Saved in: /screenshots/                             ║
+    ╚═══════════════════════════════════════════════════════════╝
     """)
     app.run(debug=True, host='0.0.0.0', port=5000)
