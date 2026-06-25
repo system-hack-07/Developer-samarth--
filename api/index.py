@@ -1,139 +1,12 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory
 import requests
 from bs4 import BeautifulSoup
 import os
-import time
-import json
-from datetime import datetime
-import base64
-from io import BytesIO
-
-# ============================================================
-# SELENIUM FOR SCREENSHOTS
-# ============================================================
-
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 app = Flask(__name__)
 
-# Create screenshot folder
-SCREENSHOT_FOLDER = 'screenshots'
-if not os.path.exists(SCREENSHOT_FOLDER):
-    os.makedirs(SCREENSHOT_FOLDER)
-
 # ============================================================
-# SCREENSHOT FUNCTION
-# ============================================================
-
-def take_screenshot(phone_number, data):
-    """Take screenshot of lookup results"""
-    try:
-        # Setup headless Chrome
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--window-size=800,600")
-        
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=chrome_options
-        )
-        
-        # Create HTML page with results
-        html_content = f'''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ 
-                    background: #0a0e17; 
-                    color: #e8f0fe; 
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    padding: 30px;
-                    max-width: 800px;
-                    margin: 0 auto;
-                }}
-                h1 {{ 
-                    color: #00c8ff;
-                    font-size: 24px;
-                    border-bottom: 2px solid #00c8ff;
-                    padding-bottom: 10px;
-                }}
-                .result {{
-                    background: rgba(255,255,255,0.05);
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-top: 20px;
-                }}
-                .row {{
-                    display: flex;
-                    padding: 8px 0;
-                    border-bottom: 1px solid rgba(255,255,255,0.05);
-                }}
-                .key {{
-                    color: #00c8ff;
-                    font-weight: bold;
-                    width: 180px;
-                    flex-shrink: 0;
-                }}
-                .value {{
-                    color: #e8f0fe;
-                }}
-                .footer {{
-                    margin-top: 30px;
-                    color: rgba(255,255,255,0.2);
-                    font-size: 12px;
-                    text-align: center;
-                }}
-            </style>
-        </head>
-        <body>
-            <h1>📱 SAMARTH INTELLIGENCE REPORT</h1>
-            <div class="result">
-                <div class="row"><span class="key">Phone Number:</span><span class="value">{phone_number}</span></div>
-                <div class="row"><span class="key">Timestamp:</span><span class="value">{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</span></div>
-        '''
-        
-        for key, val in data.items():
-            if val and val != 'N/A' and key != 'Number':
-                html_content += f'<div class="row"><span class="key">{key}:</span><span class="value">{val}</span></div>'
-        
-        html_content += '''
-            </div>
-            <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
-        </body>
-        </html>
-        '''
-        
-        # Save HTML to temp file
-        temp_html = os.path.join(SCREENSHOT_FOLDER, f'temp_{phone_number}.html')
-        with open(temp_html, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        
-        # Load HTML in headless browser
-        driver.get(f'file://{os.path.abspath(temp_html)}')
-        time.sleep(1)  # Wait for render
-        
-        # Take screenshot
-        screenshot_path = os.path.join(SCREENSHOT_FOLDER, f'screenshot_{phone_number}_{int(time.time())}.png')
-        driver.save_screenshot(screenshot_path)
-        
-        driver.quit()
-        os.remove(temp_html)  # Cleanup temp HTML
-        
-        return screenshot_path
-        
-    except Exception as e:
-        print(f"Screenshot error: {str(e)}")
-        return None
-
-
-# ============================================================
-# YOUR ORIGINAL LOOKUP FUNCTION
+# YOUR ORIGINAL LOOKUP FUNCTION - UNCHANGED
 # ============================================================
 
 def lookup_phone_number(phone_number):
@@ -193,7 +66,7 @@ def lookup_phone_number(phone_number):
         return data
 
     except Exception as e:
-        return {"error": f"Lookup failed: {str(e)}. Real ops rotate proxies + headers."}
+        return {"error": f"Lookup failed: {str(e)}"}
 
 
 # ============================================================
@@ -203,15 +76,6 @@ def lookup_phone_number(phone_number):
 @app.route('/download/<path:filename>')
 def serve_audio(filename):
     return send_from_directory('download', filename)
-
-
-# ============================================================
-# ROUTE TO SERVE SCREENSHOTS
-# ============================================================
-
-@app.route('/screenshots/<path:filename>')
-def serve_screenshot(filename):
-    return send_from_directory(SCREENSHOT_FOLDER, filename)
 
 
 # ============================================================
@@ -625,7 +489,7 @@ BOOT_HTML = '''
 
 
 # ============================================================
-# PAGE 3: SAMARTH NUMBER TO ADDRESS (WITH SCREENSHOT BUTTON)
+# PAGE 3: SAMARTH NUMBER TO ADDRESS
 # ============================================================
 
 MAIN_HTML = '''
@@ -683,15 +547,6 @@ MAIN_HTML = '''
             color: #ffffff;
             border: 2px solid #333333;
         }
-        body.dark .screenshot-btn {
-            background: #1a1a1a;
-            color: #00ff88;
-            border: 2px solid #00ff88;
-        }
-        body.dark .screenshot-btn:hover {
-            background: #00ff88;
-            color: #000000;
-        }
         
         body.light {
             background: #f5f5f5;
@@ -740,15 +595,6 @@ MAIN_HTML = '''
         }
         body.light .toggle-btn:hover {
             background: #000000;
-            color: #ffffff;
-        }
-        body.light .screenshot-btn {
-            background: #eeeeee;
-            color: #008844;
-            border: 2px solid #008844;
-        }
-        body.light .screenshot-btn:hover {
-            background: #008844;
             color: #ffffff;
         }
         
@@ -822,24 +668,6 @@ MAIN_HTML = '''
             transition: all 0.3s ease;
             font-family: 'Arial Black', sans-serif;
         }
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .screenshot-btn {
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Arial Black', sans-serif;
-            background: transparent;
-        }
         #result {
             margin-top: 30px;
             border-radius: 12px;
@@ -881,13 +709,6 @@ MAIN_HTML = '''
             font-family: 'Arial Black', sans-serif;
         }
         
-        .screenshot-preview {
-            margin-top: 20px;
-            max-width: 100%;
-            border-radius: 8px;
-            border: 2px solid #1a1a1a;
-        }
-        
         @media (max-width:600px) {
             body { padding: 15px 10px; }
             .card { padding: 20px; }
@@ -896,8 +717,6 @@ MAIN_HTML = '''
             .btn { width: 100%; text-align: center; }
             .toggle-wrap { top: 10px; right: 10px; }
             .toggle-btn { padding: 6px 12px; font-size: 0.6rem; }
-            .btn-group { flex-direction: column; }
-            .screenshot-btn { width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -924,15 +743,11 @@ MAIN_HTML = '''
                 </div>
             </form>
             <div id="result">Awaiting input...</div>
-            <div id="screenshotArea"></div>
         </div>
         <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
     </div>
 
     <script>
-        let lastData = null;
-        let lastPhone = null;
-
         document.addEventListener('click', function() {
             var audio = document.getElementById('bg-audio');
             if (audio.paused) {
@@ -964,50 +779,10 @@ MAIN_HTML = '''
             }
         });
 
-        // Take Screenshot
-        async function takeScreenshot() {
-            if (!lastPhone || !lastData) {
-                alert('Please trace a number first!');
-                return;
-            }
-            
-            const area = document.getElementById('screenshotArea');
-            area.innerHTML = '<span style="color:#444444;">📸 Capturing screenshot... Please wait.</span>';
-            
-            try {
-                const res = await fetch('/screenshot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: lastPhone, data: lastData })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    area.innerHTML = `
-                        <div style="margin-top:15px; padding:15px; background:rgba(0,255,136,0.05); border:1px solid #00ff88; border-radius:8px;">
-                            <span style="color:#00ff88;">✅ Screenshot captured!</span>
-                            <br><br>
-                            <a href="${result.url}" download target="_blank" style="color:#00c8ff; text-decoration:underline;">📥 Download Screenshot</a>
-                            <br><br>
-                            <img src="${result.url}" class="screenshot-preview" style="max-width:100%; max-height:400px; border:2px solid #1a1a1a; border-radius:8px;">
-                        </div>
-                    `;
-                } else {
-                    area.innerHTML = `<span style="color:#ff3333;">❌ Screenshot failed: ${result.message}</span>`;
-                }
-            } catch(err) {
-                area.innerHTML = `<span style="color:#ff3333;">❌ Error: ${err.message}</span>`;
-            }
-        }
-
-        // Lookup form handler
         document.getElementById('lookupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const phone = document.getElementById('phone').value;
             const resultDiv = document.getElementById('result');
-            const screenshotArea = document.getElementById('screenshotArea');
-            screenshotArea.innerHTML = '';
-            
             resultDiv.innerHTML = '<span style="color:#444444;">Processing request...</span>';
             try {
                 const res = await fetch('/lookup', {
@@ -1016,7 +791,6 @@ MAIN_HTML = '''
                     body:'phone='+encodeURIComponent(phone)
                 });
                 const data = await res.json();
-                
                 if (data.error) {
                     resultDiv.innerHTML = `<span class="err">⚠ ${data.error}</span>`;
                 } else {
@@ -1027,13 +801,6 @@ MAIN_HTML = '''
                         }
                     }
                     resultDiv.innerHTML = html;
-                    
-                    // Store for screenshot
-                    lastPhone = phone;
-                    lastData = data;
-                    
-                    // Show screenshot button
-                    resultDiv.innerHTML += `<br><button class="screenshot-btn" onclick="takeScreenshot()">📸 Take Screenshot</button>`;
                 }
             } catch(err) {
                 resultDiv.innerHTML = '<span class="err">⚠ Connection error. Retry.</span>';
@@ -1043,39 +810,6 @@ MAIN_HTML = '''
 </body>
 </html>
 '''
-
-
-# ============================================================
-# SCREENSHOT API ROUTE
-# ============================================================
-
-@app.route('/screenshot', methods=['POST'])
-def screenshot_api():
-    try:
-        data = request.get_json()
-        phone = data.get('phone')
-        result_data = data.get('data')
-        
-        if not phone or not result_data:
-            return jsonify({"success": False, "message": "Missing data"}), 400
-        
-        # Take screenshot
-        screenshot_path = take_screenshot(phone, result_data)
-        
-        if screenshot_path and os.path.exists(screenshot_path):
-            filename = os.path.basename(screenshot_path)
-            url = f"/screenshots/{filename}"
-            return jsonify({
-                "success": True,
-                "url": url,
-                "filename": filename,
-                "message": "Screenshot captured successfully"
-            })
-        else:
-            return jsonify({"success": False, "message": "Screenshot capture failed"}), 500
-            
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
 
 
 # ============================================================
@@ -1104,7 +838,14 @@ def lookup():
 
 
 # ============================================================
-# MAIN ENTRY POINT
+# VERCEL COMPATIBILITY
+# ============================================================
+
+app.debug = False
+
+
+# ============================================================
+# LOCAL DEVELOPMENT
 # ============================================================
 
 if __name__ == '__main__':
@@ -1112,9 +853,6 @@ if __name__ == '__main__':
     ╔═══════════════════════════════════════════════════════════╗
     ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE                     ║
     ║  http://127.0.0.1:5000                                   ║
-    ║                                                          ║
-    ║  📸 Screenshot Feature: Captures results as PNG          ║
-    ║  📁 Saved in: /screenshots/                             ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000)
