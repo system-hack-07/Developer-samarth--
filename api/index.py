@@ -1,31 +1,21 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, send_from_directory
 import requests
 from bs4 import BeautifulSoup
-import time
-import re
+import os
 
 app = Flask(__name__)
 
 # ============================================================
-# CORE LOOKUP ENGINE
+# YOUR ORIGINAL LOOKUP FUNCTION - UNCHANGED
 # ============================================================
 
 def lookup_phone_number(phone_number):
-    """Professional phone number intelligence lookup"""
-    
-    # Clean input
-    phone_number = re.sub(r'\s+', '', phone_number.strip())
-    if not phone_number.startswith('+'):
-        phone_number = '+' + phone_number
-    
     url = "https://calltracer.in"
     headers = {
         "Host": "calltracer.in",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Origin": "https://calltracer.in",
-        "Referer": "https://calltracer.in/"
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     payload = {
         "country": "IN",
@@ -33,75 +23,63 @@ def lookup_phone_number(phone_number):
     }
 
     try:
-        response = requests.post(url, headers=headers, data=payload, timeout=20)
+        response = requests.post(url, headers=headers, data=payload, timeout=15)
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        def extract_value(label):
-            """Extract value from table row containing label"""
-            try:
-                # Find element containing the label
-                element = soup.find(string=lambda t: t and label in str(t))
-                if element:
-                    # Navigate to parent row
-                    row = element.find_parent('tr')
-                    if row:
-                        cells = row.find_all('td')
-                        if len(cells) >= 2:
-                            value = cells[1].get_text(strip=True)
-                            return value if value else "Not Available"
-            except:
-                pass
-            return "Not Available"
+        def get_value(label):
+            cell = soup.find(string=lambda t: t and label in t)
+            if cell:
+                tr = cell.find_parent("tr")
+                if tr and tr.find_all("td"):
+                    tds = tr.find_all("td")
+                    if len(tds) > 1:
+                        return tds[1].get_text(strip=True)
+            return "N/A"
 
-        # Build comprehensive intelligence report
-        report = {
-            "phone_number": phone_number,
-            "status": "verified",
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "intelligence": {
-                "owner_name": extract_value("Owner Name"),
-                "sim_card": extract_value("SIM card"),
-                "mobile_state": extract_value("Mobile State"),
-                "connection_type": extract_value("Connection"),
-                "language": extract_value("Language"),
-                "country": extract_value("Country"),
-                "hometown": extract_value("Hometown"),
-                "reference_city": extract_value("Refrence City"),
-                "owner_address": extract_value("Owner Address"),
-                "owner_personality": extract_value("Owner Personality"),
-                "tracking_history": extract_value("Tracking History"),
-                "tower_locations": extract_value("Tower Locations"),
-                "current_location": extract_value("Mobile Locations"),
-                "ip_address": extract_value("IP address"),
-                "imei": extract_value("IMEI number"),
-                "mac_address": extract_value("MAC address"),
-                "tracker_id": extract_value("Tracker Id"),
-                "complaints": extract_value("Complaints")
-            }
+        data = {
+            "Number": phone_number,
+            "Complaints": get_value("Complaints"),
+            "Owner Name": get_value("Owner Name"),
+            "SIM Card": get_value("SIM card"),
+            "Mobile State": get_value("Mobile State"),
+            "IMEI Number": get_value("IMEI number"),
+            "MAC Address": get_value("MAC address"),
+            "Connection": get_value("Connection"),
+            "IP Address": get_value("IP address"),
+            "Owner Address": get_value("Owner Address"),
+            "Hometown": get_value("Hometown"),
+            "Reference City": get_value("Refrence City"),
+            "Owner Personality": get_value("Owner Personality"),
+            "Language": get_value("Language"),
+            "Mobile Locations": get_value("Mobile Locations"),
+            "Country": get_value("Country"),
+            "Tracking History": get_value("Tracking History"),
+            "Tracker ID": get_value("Tracker Id"),
+            "Tower Locations": get_value("Tower Locations"),
         }
 
-        # Check if we got meaningful data
-        has_data = any(v != "Not Available" for v in report["intelligence"].values())
-        if not has_data:
-            return {
-                "status": "error",
-                "message": "No intelligence data found. Please verify the number or try a different source."
-            }
+        if all(v == "N/A" for v in data.values() if v != phone_number):
+            return {"error": "No data found for this number. Try another or use residential proxies."}
 
-        return report
+        return data
 
-    except requests.exceptions.Timeout:
-        return {"status": "error", "message": "Request timeout. Please try again."}
-    except requests.exceptions.RequestException as e:
-        return {"status": "error", "message": f"Network error: {str(e)}"}
     except Exception as e:
-        return {"status": "error", "message": f"System error: {str(e)}"}
+        return {"error": f"Lookup failed: {str(e)}. Real ops rotate proxies + headers."}
 
 
 # ============================================================
-# PROFESSIONAL UI - ENTERPRISE GRADE
+# ROUTE TO SERVE MP3 FILE FROM DOWNLOAD FOLDER
+# ============================================================
+
+@app.route('/download/<path:filename>')
+def serve_audio(filename):
+    return send_from_directory('download', filename)
+
+
+# ============================================================
+# PAGE 1: WELCOME TO SAMARTH WEBSITE (DARK BOLD)
 # ============================================================
 
 HOME_HTML = '''
@@ -110,179 +88,130 @@ HOME_HTML = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Intelligence Systems</title>
+    <title>Samarth Website</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0e17;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #000000;
+            font-family: 'Arial Black', 'Impact', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-image: 
-                radial-gradient(ellipse at 10% 20%, rgba(0, 200, 255, 0.05) 0%, transparent 50%),
-                radial-gradient(ellipse at 90% 80%, rgba(0, 200, 255, 0.05) 0%, transparent 50%);
+            padding: 20px;
         }
-        
-        .security-badge {
-            position: fixed;
-            top: 20px;
-            right: 30px;
-            color: rgba(0, 200, 255, 0.3);
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 300;
-        }
-        
-        .main-container {
+        .container {
             max-width: 750px;
-            width: 90%;
+            width: 100%;
             padding: 60px 50px;
-            background: rgba(10, 14, 23, 0.85);
-            border: 1px solid rgba(0, 200, 255, 0.15);
-            border-radius: 16px;
-            box-shadow: 
-                0 0 80px rgba(0, 200, 255, 0.05),
-                inset 0 0 80px rgba(0, 200, 255, 0.02);
-            backdrop-filter: blur(10px);
+            background: #0a0a0a;
+            border: 3px solid #1a1a1a;
+            border-radius: 20px;
             text-align: center;
+            box-shadow: 0 0 80px rgba(0,0,0,0.8);
         }
-        
-        .logo-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            display: block;
+        .glow-text {
+            font-size: 3.8rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 
+                0 0 10px rgba(255,255,255,0.3),
+                0 0 20px rgba(255,255,255,0.1);
             letter-spacing: 4px;
+            margin-bottom: 10px;
         }
-        
-        h1 {
-            color: #e8f0fe;
-            font-size: 2.8rem;
-            font-weight: 200;
+        .sub-text {
+            color: #888888;
+            font-size: 1.1rem;
+            font-weight: 700;
             letter-spacing: 6px;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            border-top: 2px solid #1a1a1a;
+            border-bottom: 2px solid #1a1a1a;
+            padding: 15px 0;
+            margin-bottom: 30px;
         }
-        
-        .subtitle {
-            color: rgba(0, 200, 255, 0.6);
-            font-size: 0.85rem;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            font-weight: 300;
-            margin-bottom: 35px;
-            border-bottom: 1px solid rgba(0, 200, 255, 0.08);
-            padding-bottom: 25px;
-        }
-        
-        .tagline {
-            color: rgba(255, 255, 255, 0.4);
+        .desc {
+            color: #666666;
             font-size: 1rem;
-            font-weight: 300;
-            margin-bottom: 40px;
-            line-height: 1.7;
+            font-weight: 600;
+            line-height: 1.8;
+            margin-bottom: 35px;
         }
-        
-        .enter-btn {
+        .btn {
             display: inline-block;
-            padding: 18px 65px;
-            font-size: 1.1rem;
-            font-weight: 400;
+            padding: 18px 60px;
+            background: #1a1a1a;
+            color: #ffffff;
+            border: 2px solid #333333;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 900;
             letter-spacing: 3px;
             text-transform: uppercase;
-            color: #00c8ff;
-            background: transparent;
-            border: 1px solid rgba(0, 200, 255, 0.3);
-            border-radius: 50px;
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
         }
-        
-        .enter-btn:hover {
-            background: rgba(0, 200, 255, 0.1);
-            border-color: #00c8ff;
-            box-shadow: 0 0 40px rgba(0, 200, 255, 0.1);
-            transform: translateY(-2px);
+        .btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 0 40px rgba(255,255,255,0.1);
         }
-        
-        .enter-btn:active {
-            transform: scale(0.98);
-        }
-        
         .footer {
             position: fixed;
-            bottom: 25px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.12);
+            bottom: 20px;
+            color: #222222;
             font-size: 0.7rem;
+            font-weight: 700;
             letter-spacing: 2px;
-            font-weight: 300;
         }
-        
-        .status-dot {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            background: #00ff88;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
-        }
-        
-        @media (max-width: 600px) {
-            .main-container {
-                padding: 40px 25px;
-            }
-            h1 {
-                font-size: 2rem;
-                letter-spacing: 3px;
-            }
-            .enter-btn {
-                padding: 15px 40px;
-                font-size: 0.95rem;
-                width: 100%;
-            }
-            .security-badge {
-                display: none;
-            }
-        }
+        /* Audio player hidden */
+        #bg-audio { display: none; }
     </style>
 </head>
 <body>
-    <div class="security-badge">● Secure Connection • v4.2</div>
-    <div class="main-container">
-        <span class="logo-icon">◈</span>
-        <h1>Global Intelligence</h1>
-        <div class="subtitle">Advanced Number Intelligence Platform</div>
-        <p class="tagline">
-            Enterprise-grade phone number analytics &amp; intelligence gathering.
-            <br>Secure • Private • Authorized Access Only
+    <!-- HIDDEN AUDIO - AUTOPLAYS -->
+    <audio id="bg-audio" autoplay loop>
+        <source src="/download/neww.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div class="glow-text">WELCOME TO</div>
+        <div class="glow-text" style="color:#ffffff; text-shadow:0 0 30px rgba(255,255,255,0.15);">SAMARTH</div>
+        <div class="sub-text">Website</div>
+        <p class="desc">
+            Advanced Intelligence Platform<br>
+            Secure &bull; Private &bull; Authorized Access
         </p>
-        <a href="/boot" class="enter-btn">Access Platform</a>
+        <a href="/boot" class="btn">Enter System</a>
     </div>
-    <div class="footer">
-        <span class="status-dot"></span> System Operational • v2026.06
-    </div>
+    <div class="footer">● SAMARTH INTELLIGENCE v2026</div>
+
+    <script>
+        // Force audio play on user interaction (browser policy)
+        document.addEventListener('click', function() {
+            var audio = document.getElementById('bg-audio');
+            if (audio.paused) {
+                audio.play().catch(function(e) {});
+            }
+        });
+        // Try autoplay on load
+        window.addEventListener('load', function() {
+            var audio = document.getElementById('bg-audio');
+            audio.play().catch(function(e) {});
+        });
+    </script>
 </body>
 </html>
 '''
+
+
+# ============================================================
+# PAGE 2: BOOT SEQUENCE (DARK BOLD)
+# ============================================================
 
 BOOT_HTML = '''
 <!DOCTYPE html>
@@ -290,98 +219,96 @@ BOOT_HTML = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Initialization</title>
+    <title>Initializing</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0e17;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #000000;
+            font-family: 'Courier New', monospace;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
-        .terminal-box {
+        .box {
             max-width: 650px;
             width: 100%;
             padding: 45px 40px;
-            background: rgba(10, 14, 23, 0.9);
-            border: 1px solid rgba(0, 200, 255, 0.12);
-            border-radius: 12px;
-            box-shadow: 0 0 60px rgba(0, 200, 255, 0.03);
+            background: #0a0a0a;
+            border: 2px solid #1a1a1a;
+            border-radius: 16px;
         }
-        .log-line {
-            color: rgba(255, 255, 255, 0.5);
+        .log {
+            color: #555555;
             font-size: 0.9rem;
-            padding: 4px 0;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-            font-family: 'Courier New', monospace;
+            padding: 5px 0;
+            font-weight: 700;
         }
-        .log-line.success { color: #00ff88; }
-        .log-line.active { color: #00c8ff; }
-        .loader {
+        .log.success { color: #00ff88; }
+        .log.active { color: #ffffff; }
+        .spinner {
             width: 40px;
             height: 40px;
-            margin: 25px auto;
-            border: 2px solid rgba(0, 200, 255, 0.1);
-            border-top: 2px solid #00c8ff;
+            margin: 30px auto;
+            border: 3px solid #1a1a1a;
+            border-top: 3px solid #ffffff;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         #status {
-            color: rgba(0, 200, 255, 0.5);
-            font-size: 0.8rem;
-            letter-spacing: 2px;
+            color: #333333;
+            font-size: 0.75rem;
             text-align: center;
-            margin-top: 15px;
-            font-weight: 300;
-        }
-        @media (max-width: 600px) {
-            .terminal-box { padding: 30px 20px; }
+            letter-spacing: 3px;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="terminal-box" id="bootlog">
-        <div class="log-line">> Initializing intelligence engine...</div>
-        <div class="log-line">> Establishing secure channels...</div>
-        <div class="log-line">> Authenticating credentials...</div>
-        <div class="loader"></div>
-        <div id="status">CONNECTING TO SECURE NODES</div>
+    <div class="box" id="bootlog">
+        <div class="log">> Initializing Samarth core...</div>
+        <div class="log">> Establishing secure tunnel...</div>
+        <div class="log">> Authenticating session...</div>
+        <div class="spinner"></div>
+        <div id="status">CONNECTING TO NODES</div>
     </div>
     <script>
         const logDiv = document.getElementById('bootlog');
         const statusDiv = document.getElementById('status');
-        const messages = [
-            { text: "> Loading core modules...", cls: "log-line" },
-            { text: "> Establishing encrypted tunnel...", cls: "log-line" },
-            { text: "> Synchronizing with global databases...", cls: "log-line" },
-            { text: "> Connection established.", cls: "log-line success" },
-            { text: "> System ready.", cls: "log-line success" }
+        const msgs = [
+            { text: "> Loading modules...", cls: "log" },
+            { text: "> Encryption handshake complete.", cls: "log" },
+            { text: "> Database synchronization...", cls: "log" },
+            { text: "> Connection established.", cls: "log success" },
+            { text: "> System ready.", cls: "log success" }
         ];
         let idx = 0;
         function nextLog() {
-            if (idx < messages.length) {
-                const div = document.createElement('div');
-                div.className = messages[idx].cls;
-                div.textContent = messages[idx].text;
-                logDiv.insertBefore(div, statusDiv);
+            if (idx < msgs.length) {
+                const d = document.createElement('div');
+                d.className = msgs[idx].cls;
+                d.textContent = msgs[idx].text;
+                logDiv.insertBefore(d, statusDiv);
                 idx++;
-                setTimeout(nextLog, 600);
+                setTimeout(nextLog, 550);
             } else {
-                statusDiv.textContent = "● SYSTEM ONLINE — REDIRECTING";
+                statusDiv.textContent = "● ONLINE — Redirecting";
                 statusDiv.style.color = "#00ff88";
                 setTimeout(() => { window.location.href = '/main'; }, 1200);
             }
         }
-        setTimeout(nextLog, 500);
+        setTimeout(nextLog, 400);
     </script>
 </body>
 </html>
 '''
+
+
+# ============================================================
+# PAGE 3: SAMARTH NUMBER TO ADDRESS WEBSITE (DARK BOLD)
+# ============================================================
 
 MAIN_HTML = '''
 <!DOCTYPE html>
@@ -389,190 +316,201 @@ MAIN_HTML = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intelligence Dashboard</title>
+    <title>Samarth Number to Address</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0e17;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #000000;
+            font-family: 'Arial Black', 'Impact', sans-serif;
             min-height: 100vh;
             padding: 30px 20px;
         }
-        .dashboard {
-            max-width: 900px;
-            margin: 0 auto;
-        }
+        .wrap { max-width: 900px; margin: 0 auto; }
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
             padding-bottom: 25px;
-            border-bottom: 1px solid rgba(0, 200, 255, 0.08);
+            border-bottom: 3px solid #1a1a1a;
             margin-bottom: 30px;
         }
         .header h1 {
-            color: #e8f0fe;
-            font-size: 1.6rem;
-            font-weight: 300;
-            letter-spacing: 3px;
+            color: #ffffff;
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(255,255,255,0.05);
         }
-        .header span {
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 0.7rem;
-            letter-spacing: 1px;
+        .header h1 span {
+            color: #888888;
+        }
+        .header .sub {
+            color: #444444;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 8px;
         }
         .card {
-            background: rgba(10, 14, 23, 0.85);
-            border: 1px solid rgba(0, 200, 255, 0.08);
-            border-radius: 12px;
+            background: #0a0a0a;
+            border: 2px solid #1a1a1a;
+            border-radius: 16px;
             padding: 35px 40px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
         }
-        .card-title {
-            color: rgba(255, 255, 255, 0.4);
+        .card-label {
+            color: #444444;
             font-size: 0.7rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 400;
-            margin-bottom: 20px;
+            letter-spacing: 4px;
+            margin-bottom: 18px;
         }
-        .input-group {
+        .input-row {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
         }
-        .input-group input {
+        .input-row input {
             flex: 1;
-            min-width: 220px;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(0, 200, 255, 0.12);
-            border-radius: 8px;
-            color: #e8f0fe;
+            min-width: 200px;
+            padding: 15px 18px;
+            background: #111111;
+            border: 2px solid #1a1a1a;
+            border-radius: 10px;
+            color: #ffffff;
             font-size: 1rem;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-            transition: all 0.3s;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-weight: 700;
+            transition: 0.3s;
+            font-family: 'Arial Black', sans-serif;
         }
-        .input-group input:focus {
+        .input-row input:focus {
             outline: none;
-            border-color: rgba(0, 200, 255, 0.3);
-            background: rgba(255, 255, 255, 0.06);
+            border-color: #333333;
+            background: #0d0d0d;
         }
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.2);
+        .input-row input::placeholder {
+            color: #333333;
+            font-weight: 700;
         }
         .btn {
-            padding: 14px 35px;
-            background: transparent;
-            border: 1px solid rgba(0, 200, 255, 0.25);
-            border-radius: 8px;
-            color: #00c8ff;
-            font-size: 0.85rem;
-            font-weight: 400;
-            letter-spacing: 2px;
+            padding: 15px 35px;
+            background: #1a1a1a;
+            border: 2px solid #333333;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 900;
+            letter-spacing: 3px;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: 0.3s;
+            font-family: 'Arial Black', sans-serif;
         }
         .btn:hover {
-            background: rgba(0, 200, 255, 0.08);
-            border-color: #00c8ff;
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
-        .btn:active { transform: scale(0.98); }
-        
         #result {
             margin-top: 30px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
+            background: #080808;
+            border-radius: 12px;
             padding: 25px;
             min-height: 120px;
-            border: 1px solid rgba(0, 200, 255, 0.05);
-            color: rgba(255, 255, 255, 0.7);
+            border: 2px solid #121212;
+            color: #888888;
             font-size: 0.95rem;
-            line-height: 1.9;
-            font-weight: 300;
+            line-height: 2;
+            font-weight: 700;
             white-space: pre-wrap;
             word-break: break-word;
+            font-family: 'Courier New', monospace;
         }
-        #result .key {
-            color: rgba(0, 200, 255, 0.7);
-            font-weight: 400;
-        }
-        #result .value {
-            color: #e8f0fe;
-        }
-        #result .error {
-            color: #ff6b6b;
-        }
-        #result .success {
-            color: #00ff88;
-        }
+        #result .key { color: #ffffff; }
+        #result .val { color: #aaaaaa; }
+        #result .err { color: #ff3333; }
+        #result .ok { color: #00ff88; }
         .footer {
             text-align: center;
-            margin-top: 40px;
-            color: rgba(255, 255, 255, 0.06);
+            margin-top: 35px;
+            color: #1a1a1a;
             font-size: 0.65rem;
-            letter-spacing: 2px;
+            font-weight: 700;
+            letter-spacing: 3px;
         }
-        @media (max-width: 600px) {
+        /* Hidden audio */
+        #bg-audio { display: none; }
+        @media (max-width:600px) {
             body { padding: 15px 10px; }
             .card { padding: 20px; }
-            .header h1 { font-size: 1.2rem; }
-            .header span { display: none; }
-            .input-group input { min-width: 100%; }
+            .header h1 { font-size: 1.6rem; }
+            .input-row input { min-width: 100%; }
             .btn { width: 100%; text-align: center; }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard">
+    <!-- HIDDEN AUDIO - AUTOPLAYS -->
+    <audio id="bg-audio" autoplay loop>
+        <source src="/download/neww.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="wrap">
         <div class="header">
-            <h1>◈ Number Intelligence</h1>
-            <span>SECURE • v4.2</span>
+            <h1>WELCOME TO <span>SAMARTH</span></h1>
+            <div class="sub">Number to Address Website</div>
         </div>
         <div class="card">
-            <div class="card-title">Enter Target Number</div>
+            <div class="card-label">Enter Target Number</div>
             <form id="lookupForm">
-                <div class="input-group">
-                    <input type="text" id="phone" placeholder="+91XXXXXXXXXX or 91XXXXXXXXXX" required>
+                <div class="input-row">
+                    <input type="text" id="phone" placeholder="+91XXXXXXXXXX" required>
                     <button type="submit" class="btn">Trace</button>
                 </div>
             </form>
             <div id="result">Awaiting input...</div>
         </div>
-        <div class="footer">System Intelligence • Authorized Use Only</div>
+        <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
     </div>
+
     <script>
+        // Force audio play on user interaction
+        document.addEventListener('click', function() {
+            var audio = document.getElementById('bg-audio');
+            if (audio.paused) {
+                audio.play().catch(function(e) {});
+            }
+        });
+        window.addEventListener('load', function() {
+            var audio = document.getElementById('bg-audio');
+            audio.play().catch(function(e) {});
+        });
+
+        // Lookup form handler
         document.getElementById('lookupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const phone = document.getElementById('phone').value;
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<span style="color: rgba(0,200,255,0.5);">Processing intelligence request...</span>';
+            resultDiv.innerHTML = '<span style="color:#444444;">Processing request...</span>';
             try {
                 const res = await fetch('/lookup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'phone=' + encodeURIComponent(phone)
+                    method:'POST',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                    body:'phone='+encodeURIComponent(phone)
                 });
                 const data = await res.json();
-                if (data.status === 'error') {
-                    resultDiv.innerHTML = `<span class="error">⚠ ${data.message}</span>`;
+                if (data.error) {
+                    resultDiv.innerHTML = `<span class="err">⚠ ${data.error}</span>`;
                 } else {
-                    let html = `<span class="success">✓ Intelligence report generated</span><br><br>`;
-                    html += `<span class="key">Phone:</span> <span class="value">${data.phone_number}</span><br>`;
-                    html += `<span class="key">Timestamp:</span> <span class="value">${data.timestamp}</span><br><br>`;
-                    for (let [key, val] of Object.entries(data.intelligence)) {
-                        if (val && val !== 'Not Available') {
-                            const label = key.replace(/_/g, ' ').toUpperCase();
-                            html += `<span class="key">${label}:</span> <span class="value">${val}</span><br>`;
+                    let html = `<span class="ok">✓ Report Generated</span><br><br>`;
+                    for (let [key, val] of Object.entries(data)) {
+                        if (val && val !== 'N/A') {
+                            html += `<span class="key">${key}:</span> <span class="val">${val}</span><br>`;
                         }
                     }
                     resultDiv.innerHTML = html;
                 }
             } catch(err) {
-                resultDiv.innerHTML = `<span class="error">⚠ Connection error. Please retry.</span>`;
+                resultDiv.innerHTML = '<span class="err">⚠ Connection error. Retry.</span>';
             }
         });
     </script>
@@ -601,20 +539,20 @@ def main_page():
 def lookup():
     phone = request.form.get('phone')
     if not phone:
-        return jsonify({"status": "error", "message": "Phone number required"}), 400
+        return jsonify({"error": "Phone number required"}), 400
     result = lookup_phone_number(phone)
     return jsonify(result)
 
 
 # ============================================================
-# RUN SERVER
+# MAIN ENTRY POINT
 # ============================================================
 
 if __name__ == '__main__':
     print("""
-    ╔═══════════════════════════════════════════════════════╗
-    ║  GLOBAL INTELLIGENCE SYSTEM — ONLINE                  ║
-    ║  http://127.0.0.1:5000                               ║
-    ╚═══════════════════════════════════════════════════════╝
+    ╔════════════════════════════════════════════╗
+    ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE      ║
+    ║  http://127.0.0.1:5000                     ║
+    ╚════════════════════════════════════════════╝
     """)
     app.run(debug=True, host='0.0.0.0', port=5000)
