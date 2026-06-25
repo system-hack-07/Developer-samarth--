@@ -66,11 +66,11 @@ def lookup_phone_number(phone_number):
         return data
 
     except Exception as e:
-        return {"error": f"Lookup failed: {str(e)}"}
+        return {"error": f"Lookup failed: {str(e)}. Real ops rotate proxies + headers."}
 
 
 # ============================================================
-# ROUTE TO SERVE MP3 FILE
+# ROUTE TO SERVE MP3 FILE FROM DOWNLOAD FOLDER
 # ============================================================
 
 @app.route('/download/<path:filename>')
@@ -79,7 +79,7 @@ def serve_audio(filename):
 
 
 # ============================================================
-# PAGE 1: WELCOME TO SAMARTH WEBSITE
+# PAGE 1: WELCOME TO SAMARTH WEBSITE (SMALLER TITLE + TOGGLE)
 # ============================================================
 
 HOME_HTML = '''
@@ -92,6 +92,7 @@ HOME_HTML = '''
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
+        /* DARK MODE (default) */
         body.dark {
             background: #000000;
             color: #ffffff;
@@ -119,6 +120,7 @@ HOME_HTML = '''
             border: 2px solid #333333;
         }
         
+        /* LIGHT MODE */
         body.light {
             background: #f5f5f5;
             color: #000000;
@@ -220,6 +222,7 @@ HOME_HTML = '''
         }
         #bg-audio { display: none; }
         
+        /* Toggle Button */
         .toggle-wrap {
             position: fixed;
             top: 20px;
@@ -249,10 +252,12 @@ HOME_HTML = '''
     </style>
 </head>
 <body class="dark">
+    <!-- HIDDEN AUDIO - AUTOPLAYS -->
     <audio id="bg-audio" autoplay loop>
         <source src="/download/neww.mp3" type="audio/mpeg">
     </audio>
 
+    <!-- TOGGLE BUTTON -->
     <div class="toggle-wrap">
         <button class="toggle-btn" onclick="toggleMode()">🌓 Toggle</button>
     </div>
@@ -270,6 +275,7 @@ HOME_HTML = '''
     <div class="footer">● SAMARTH INTELLIGENCE v2026 ●</div>
 
     <script>
+        // Audio autoplay
         document.addEventListener('click', function() {
             var audio = document.getElementById('bg-audio');
             if (audio.paused) {
@@ -281,6 +287,7 @@ HOME_HTML = '''
             audio.play().catch(function(e) {});
         });
 
+        // Dark/Light mode toggle
         function toggleMode() {
             const body = document.body;
             if (body.classList.contains('dark')) {
@@ -293,6 +300,7 @@ HOME_HTML = '''
                 localStorage.setItem('theme', 'dark');
             }
         }
+        // Load saved theme
         window.addEventListener('load', function() {
             const saved = localStorage.getItem('theme');
             if (saved === 'light') {
@@ -307,7 +315,7 @@ HOME_HTML = '''
 
 
 # ============================================================
-# PAGE 2: BOOT SEQUENCE
+# PAGE 2: BOOT SEQUENCE (WITH TOGGLE)
 # ============================================================
 
 BOOT_HTML = '''
@@ -489,7 +497,7 @@ BOOT_HTML = '''
 
 
 # ============================================================
-# PAGE 3: SAMARTH NUMBER TO ADDRESS
+# PAGE 3: SAMARTH NUMBER TO ADDRESS WEBSITE (WITH TOGGLE)
 # ============================================================
 
 MAIN_HTML = '''
@@ -721,6 +729,7 @@ MAIN_HTML = '''
     </style>
 </head>
 <body class="dark">
+    <!-- HIDDEN AUDIO - AUTOPLAYS -->
     <audio id="bg-audio" autoplay loop>
         <source src="/download/neww.mp3" type="audio/mpeg">
     </audio>
@@ -748,6 +757,7 @@ MAIN_HTML = '''
     </div>
 
     <script>
+        // Audio autoplay
         document.addEventListener('click', function() {
             var audio = document.getElementById('bg-audio');
             if (audio.paused) {
@@ -759,6 +769,7 @@ MAIN_HTML = '''
             audio.play().catch(function(e) {});
         });
 
+        // Dark/Light mode toggle
         function toggleMode() {
             const body = document.body;
             if (body.classList.contains('dark')) {
@@ -771,6 +782,7 @@ MAIN_HTML = '''
                 localStorage.setItem('theme', 'dark');
             }
         }
+        // Load saved theme
         window.addEventListener('load', function() {
             const saved = localStorage.getItem('theme');
             if (saved === 'light') {
@@ -779,6 +791,7 @@ MAIN_HTML = '''
             }
         });
 
+        // Lookup form handler
         document.getElementById('lookupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const phone = document.getElementById('phone').value;
@@ -838,21 +851,14 @@ def lookup():
 
 
 # ============================================================
-# VERCEL COMPATIBILITY
-# ============================================================
-
-app.debug = False
-
-
-# ============================================================
-# LOCAL DEVELOPMENT
+# MAIN ENTRY POINT
 # ============================================================
 
 if __name__ == '__main__':
     print("""
-    ╔═══════════════════════════════════════════════════════════╗
-    ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE                     ║
-    ║  http://127.0.0.1:5000                                   ║
-    ╚═══════════════════════════════════════════════════════════╝
+    ╔════════════════════════════════════════════╗
+    ║  SAMARTH INTELLIGENCE SYSTEM — ONLINE      ║
+    ║  http://127.0.0.1:5000                     ║
+    ╚════════════════════════════════════════════╝
     """)
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
