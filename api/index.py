@@ -72,13 +72,29 @@ HOME_HTML = '''<!DOCTYPE html>
     <title>SAMARTH HACKER</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        body { margin:0; padding:0; background:#000; color:#00ffff; font-family:'VT323',monospace; overflow:hidden; }
+        body { 
+            margin:0; padding:0; background:#000; color:#00ffff; 
+            font-family:'VT323',monospace; 
+            min-height:100vh; overflow-y:auto; 
+        }
         .scanlines { position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(transparent 0px,transparent 2px,rgba(0,255,255,0.1) 2px,rgba(0,255,255,0.1) 4px); pointer-events:none; z-index:10; }
-        .glitch { position:relative; font-size:4rem; text-align:center; margin-top:20vh; text-shadow:0 0 10px #00ffff,0 0 20px #00ffff; animation:glitch 1s infinite; }
+        .glitch { 
+            position:relative; font-size:3.5rem; text-align:center; margin-top:15vh; 
+            text-shadow:0 0 10px #00ffff,0 0 20px #00ffff; animation:glitch 1s infinite; 
+        }
         @keyframes glitch { 0%{transform:translate(0);} 20%{transform:translate(-2px,2px);} 40%{transform:translate(-2px,-2px);} 60%{transform:translate(2px,2px);} 80%{transform:translate(2px,-2px);} 100%{transform:translate(0);} }
-        .enter-btn { display:block; margin:50px auto; padding:20px 60px; font-size:2rem; background:transparent; color:#00ffff; border:4px solid #00ffff; box-shadow:0 0 30px #00ffff; cursor:pointer; transition:all 0.3s; }
+        .enter-btn { 
+            display:block; margin:50px auto; padding:20px 60px; font-size:2rem; 
+            background:transparent; color:#00ffff; border:4px solid #00ffff; 
+            box-shadow:0 0 30px #00ffff; cursor:pointer; transition:all 0.3s; 
+            max-width:90%; 
+        }
         .enter-btn:hover { background:#00ffff; color:#000; box-shadow:0 0 50px #00ffff; }
         footer { position:fixed; bottom:10px; width:100%; text-align:center; font-size:1.2rem; }
+        @media (max-width: 600px) {
+            .glitch { font-size:2.5rem; margin-top:20vh; }
+            .enter-btn { font-size:1.6rem; padding:15px 40px; }
+        }
     </style>
 </head>
 <body>
@@ -89,7 +105,7 @@ HOME_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# === PAGE 2: FAKE BOOT WITH ANIMATION ===
+# === PAGE 2: FAKE BOOT ===
 BOOT_HTML = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,13 +114,22 @@ BOOT_HTML = '''<!DOCTYPE html>
     <title>BOOT SEQUENCE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        body { margin:0; padding:0; background:#000; color:#00ffff; font-family:'VT323',monospace; overflow:hidden; }
-        .terminal { padding:20px; max-width:800px; margin:40px auto; border:2px solid #00ffff; box-shadow:0 0 40px #00ffff; animation:flicker 0.1s infinite alternate; }
+        body { 
+            margin:0; padding:0; background:#000; color:#00ffff; 
+            font-family:'VT323',monospace; overflow-y:auto; min-height:100vh;
+        }
+        .terminal { 
+            padding:20px; max-width:800px; margin:40px auto; border:2px solid #00ffff; 
+            box-shadow:0 0 40px #00ffff; animation:flicker 0.1s infinite alternate; 
+        }
         @keyframes flicker { 0%{opacity:0.95;} 100%{opacity:1;} }
         .loader { width:80px; height:80px; border:8px solid #333; border-top:8px solid #00ffff; border-radius:50%; animation:spin 1s linear infinite; margin:30px auto; }
         @keyframes spin { to { transform:rotate(360deg); } }
         .log { margin:5px 0; }
         footer { position:fixed; bottom:10px; width:100%; text-align:center; }
+        @media (max-width: 600px) {
+            .terminal { margin:20px 10px; padding:15px; font-size:1.1rem; }
+        }
     </style>
 </head>
 <body>
@@ -131,7 +156,7 @@ BOOT_HTML = '''<!DOCTYPE html>
 </body>
 </html>'''
 
-# === PAGE 3: MAIN TRACKER ===
+# === PAGE 3: MAIN TRACKER (Fully Responsive) ===
 MAIN_HTML = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,20 +165,39 @@ MAIN_HTML = '''<!DOCTYPE html>
     <title>PHONE TRACKER v2026</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        body { margin:0; padding:0; background:#000; color:#00ffff; font-family:'VT323',monospace; overflow:hidden; }
+        body { 
+            margin:0; padding:0; background:#000; color:#00ffff; 
+            font-family:'VT323',monospace; overflow-y:auto; min-height:100vh;
+        }
         .scanlines { position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(transparent 0px,transparent 2px,rgba(0,255,255,0.08) 2px,rgba(0,255,255,0.08) 4px); pointer-events:none; z-index:10; }
-        .container { max-width:900px; margin:40px auto; padding:20px; border:3px solid #00ffff; box-shadow:0 0 50px #00ffff; }
-        input, button { font-family:'VT323',monospace; font-size:1.5rem; padding:15px; margin:10px; background:#111; color:#00ffff; border:2px solid #00ffff; }
+        .container { 
+            max-width:900px; margin:20px auto; padding:15px; border:3px solid #00ffff; 
+            box-shadow:0 0 50px #00ffff; 
+        }
+        h1 { text-align:center; text-shadow:0 0 20px #00ffff; font-size:2.2rem; }
+        input, button { 
+            font-family:'VT323',monospace; font-size:1.5rem; padding:15px; margin:10px 0; 
+            background:#111; color:#00ffff; border:2px solid #00ffff; width:100%; box-sizing:border-box;
+        }
         button { cursor:pointer; box-shadow:0 0 20px #00ffff; }
         button:hover { background:#00ffff; color:#000; }
-        #result { margin-top:30px; white-space:pre-wrap; background:#111; padding:20px; border:2px solid #00ffff; min-height:300px; }
-        footer { position:fixed; bottom:10px; width:100%; text-align:center; }
+        #result { 
+            margin-top:30px; white-space:pre-wrap; background:#111; padding:20px; 
+            border:2px solid #00ffff; min-height:200px; word-break:break-all;
+        }
+        footer { position:fixed; bottom:10px; width:100%; text-align:center; font-size:1rem; }
+        @media (max-width: 600px) {
+            .container { margin:10px; padding:10px; }
+            h1 { font-size:1.8rem; }
+            input, button { font-size:1.4rem; padding:12px; }
+            #result { font-size:1.2rem; }
+        }
     </style>
 </head>
 <body>
     <div class="scanlines"></div>
     <div class="container">
-        <h1 style="text-align:center; text-shadow:0 0 20px #00ffff;">WELCOME TO PHONE NUMBER TO ADDRESS WEBSITE</h1>
+        <h1>WELCOME TO PHONE NUMBER TO ADDRESS WEBSITE</h1>
         <p style="text-align:center;">Enter number below and EXECUTE</p>
         <form id="lookupForm">
             <input type="text" id="phone" placeholder="+91XXXXXXXXXX" required>
@@ -169,13 +213,19 @@ MAIN_HTML = '''<!DOCTYPE html>
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = '<div style="color:#0f0;">[EXECUTING] Tracing number... Please wait.</div>';
             try {
-                const res = await fetch('/lookup', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'phone=' + encodeURIComponent(phone) });
+                const res = await fetch('/lookup', { 
+                    method:'POST', 
+                    headers:{'Content-Type':'application/x-www-form-urlencoded'}, 
+                    body:'phone=' + encodeURIComponent(phone) 
+                });
                 const data = await res.json();
                 if (data.error) {
                     resultDiv.innerHTML = `<div style="color:#f00;">[ERROR] ${data.error}</div>`;
                 } else {
                     let html = '<div style="color:#0f0;">[SUCCESS] Result completed successfully</div><br>';
-                    for (let key in data) { html += `<strong>${key}:</strong> ${data[key]}<br>`; }
+                    for (let key in data) { 
+                        html += `<strong>${key}:</strong> ${data[key]}<br>`; 
+                    }
                     resultDiv.innerHTML = html;
                 }
             } catch(err) {
